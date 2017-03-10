@@ -1,7 +1,7 @@
 ##############################################################################
-# Populate_HPE_Synergy_DCS.ps1
+# Populate_HPE_Synergy.ps1
 #
-# - Example script for configuring the HPE Synergy DCS Appliance
+# - Example script for configuring the HPE Synergy Appliance
 #
 #   VERSION 1.0
 #
@@ -52,10 +52,10 @@ function Configure_Networks
 {
     ##########################################################################
     #
-    # Process variables in the Populate_HPE_Synergy_DCS-Params.txt file.
+    # Process variables in the Populate_HPE_Synergy-Params.txt file.
     #
     ##########################################################################
-    New-Variable -Name config_file -Value .\Populate_HPE_Synergy_DCS-Params.txt
+    New-Variable -Name config_file -Value .\Populate_HPE_Synergy-Params.txt
 
     if (Test-Path $config_file) {    
         Get-Content $config_file | Where-Object { !$_.StartsWith("#") } | Foreach-Object {
@@ -170,11 +170,11 @@ function Create_Enclosure_Group
 {
     ##########################################################################
     #
-    # Process variables in the Populate_HPE_Synergy_DCS-Params.txt file.
+    # Process variables in the Populate_HPE_Synergy-Params.txt file.
     #
     ##########################################################################
     Write-Output "Creating Enclosure Group" | Timestamp
-    New-Variable -Name config_file -Value .\Populate_HPE_Synergy_DCS-Params.txt
+    New-Variable -Name config_file -Value .\Populate_HPE_Synergy-Params.txt
     if (Test-Path $config_file) {    
         Get-Content $config_file | Where-Object { !$_.StartsWith("#") } | Foreach-Object {
             $var = $_.Split('=')
@@ -364,7 +364,7 @@ if (-not $ConnectedSessions)
 
     if (-not $ConnectedSessions)
     {
-        Write-Output "Login to Synergy DCS Appliance failed.  Exiting."
+        Write-Output "Login to Synergy Appliance failed.  Exiting."
         Exit
     } 
     else {
@@ -374,7 +374,7 @@ if (-not $ConnectedSessions)
 
 filter Timestamp {"$(Get-Date -Format G): $_"}
 
-Write-Output "Configuring HPE Synergy DCS Appliance" | Timestamp
+Write-Output "Configuring HPE Synergy Appliance" | Timestamp
 
 Add_Remote_Enclosures
 Rename_Enclosures
@@ -393,4 +393,4 @@ Create_Server_Profile_Template_SAN_Storage
 Create_Server_Profile_Local_Storage
 Create_Server_Profile_SAN_Storage
 
-Write-Output "HPE Synergy DCS Appliance Configuration Complete" | Timestamp
+Write-Output "HPE Synergy Appliance Configuration Complete" | Timestamp

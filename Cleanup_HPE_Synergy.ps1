@@ -1,7 +1,7 @@
 ##############################################################################
-# Cleanup_HPE_Syergy_DCS.ps1
+# Cleanup_HPE_Syergy.ps1
 #
-# - Example script for de-configuring the HPE Synergy DCS Appliance
+# - Example script for de-configuring the HPE Synergy Appliance
 #
 #   VERSION 1.0
 #
@@ -202,14 +202,14 @@ if (-not $ConnectedSessions)
     
     if (-not $ConnectedSessions)
     {
-        Write-Output "Login to Synergy DCS Appliance failed.  Exiting."
+        Write-Output "Login to Synergy Appliance failed.  Exiting."
         Exit
     } 
 }
 
 filter Timestamp {"$(Get-Date -Format G): $_"}
 
-Write-Output "De-Configuring HPE Synergy DCS Appliance" | Timestamp
+Write-Output "De-Configuring HPE Synergy Appliance" | Timestamp
 
 Remove_Server_Profiles
 Remove_Server_Profile_Templates
@@ -236,4 +236,4 @@ Remove_IPv4_Subnets
 Remove_Licenses
 Remove_Firmware_Bundles
 
-Write-Output "HPE Synergy DCS Appliance De-configuration Complete" | Timestamp
+Write-Output "HPE Synergy Appliance De-configuration Complete" | Timestamp
