@@ -219,15 +219,15 @@ function Add_Licenses
 {
     Write-Output "Adding OneView Advanced Licenses" | Timestamp
     $ov_license_1 = Read-Host "Optional: OneView Advanced 16-Server License"
-    New-HPOVLicense -LicenseKey '$ov_license_1'
+    New-HPOVLicense -LicenseKey $ov_license_1
     $ov_license_2 = Read-Host "Optional: OneView Advanced 16-Server License"
-    New-HPOVLicense -LicenseKey '$ov_license_2'
+    New-HPOVLicense -LicenseKey $ov_license_2
     
     Write-Output "Adding Synergy 8GB FC Licenses" | Timestamp
     $fc_license_1 = Read-Host "Optional: Synergy 8GB FC License"
-    New-HPOVLicense -LicenseKey '$fc_license_1'
+    New-HPOVLicense -LicenseKey $fc_license_1
     $fc_license_2 = Read-Host "Optional: Synergy 8GB FC License"
-    New-HPOVLicense -LicenseKey '$fc_license_2'
+    New-HPOVLicense -LicenseKey $fc_license_2
 
     Write-Output "All Licenses Added" | Timestamp
 }
@@ -423,22 +423,22 @@ Write-Output "Configuring HPE Synergy Appliance" | Timestamp
 
 Add_Firmware_Bundle
 Add_Licenses
-#Add_Remote_Enclosures
-#Rename_Enclosures
-#PowerOff_All_Servers
-#Configure_SAN_Managers
-#Configure_Networks
-#Add_Storage
-#Add_Users
-#Create_OS_Deployment_Server
-#Create_Logical_Interconnect_Groups
-#Create_Uplink_Sets
-#Create_Enclosure_Group
-#Create_Logical_Enclosure
-#Create_Server_Profile_Template_Local_Storage
-#Create_Server_Profile_Template_SAN_Storage
-#Create_Server_Profile_Local_Storage
-#Create_Server_Profile_SAN_Storage
-#Add_Scopes
+Add_Remote_Enclosures
+Rename_Enclosures
+PowerOff_All_Servers
+Configure_SAN_Managers
+Configure_Networks
+Add_Storage
+Add_Users
+Create_OS_Deployment_Server
+Create_Logical_Interconnect_Groups
+Create_Uplink_Sets
+Create_Enclosure_Group
+Create_Logical_Enclosure
+Create_Server_Profile_Template_Local_Storage
+Create_Server_Profile_Template_SAN_Storage
+Create_Server_Profile_Local_Storage
+Create_Server_Profile_SAN_Storage
+Add_Scopes
 
 Write-Output "HPE Synergy Appliance Configuration Complete" | Timestamp

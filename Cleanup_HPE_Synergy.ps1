@@ -231,16 +231,16 @@ filter Timestamp {"$(Get-Date -Format G): $_"}
 
 Write-Output "De-Configuring HPE Synergy Appliance" | Timestamp
 
-#Remove_Server_Profiles
-#Remove_Server_Profile_Templates
-#Remove_Logical_Enclosures
-#Remove_Enclosure_Groups
-#Remove_Logical_Interconnect_Groups
-#Rename_Enclosures
-#Remove_Storage_Volume_Templates
-#Remove_Storage_Volumes
-#Remove_Storage_Pools
-#Remove_Storage_Systems
+Remove_Server_Profiles
+Remove_Server_Profile_Templates
+Remove_Logical_Enclosures
+Remove_Enclosure_Groups
+Remove_Logical_Interconnect_Groups
+Rename_Enclosures
+Remove_Storage_Volume_Templates
+Remove_Storage_Volumes
+Remove_Storage_Pools
+Remove_Storage_Systems
 
 #
 #    Disabled the removal of OS Deployment Server since 
@@ -248,14 +248,14 @@ Write-Output "De-Configuring HPE Synergy Appliance" | Timestamp
 #
 #Remove_OS_Deployment_Servers
 
-#Remove_Networks
-#Remove_Network_Sets
-#Remove_IPv4_Address_Pool_Ranges
-#Remove_IPv4_Subnets
-#Remove_SAN_Managers
-#Remove_Licenses
-#Remove_New_Users
-#Remove_Scopes
-#Remove_Firmware_Bundles
+Remove_Networks
+Remove_Network_Sets
+Remove_IPv4_Address_Pool_Ranges
+Remove_IPv4_Subnets
+Remove_SAN_Managers
+Remove_Licenses
+Remove_New_Users
+Remove_Scopes
+Remove_Firmware_Bundles
 
 Write-Output "HPE Synergy Appliance De-configuration Complete" | Timestamp
