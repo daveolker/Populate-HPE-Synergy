@@ -68,8 +68,8 @@ function Configure_Networks
     }
     
     Write-Output "Adding IPv4 Subnets" | Timestamp
-    New-HPOVAddressPoolSubnet -Domain "mgmt.lan" -Gateway $prod_gateway -NetworkId $prod_subnet -SubnetMask 255.255.255.0
-    New-HPOVAddressPoolSubnet -Domain "deployment.lan" -Gateway $deploy_gateway -NetworkId $deploy_subnet -SubnetMask 255.255.255.0
+    New-HPOVAddressPoolSubnet -Domain "mgmt.lan" -Gateway $prod_gateway -NetworkId $prod_subnet -SubnetMask $prod_mask
+    New-HPOVAddressPoolSubnet -Domain "deployment.lan" -Gateway $deploy_gateway -NetworkId $deploy_subnet -SubnetMask $deploy_mask
     
     Write-Output "Adding IPv4 Address Pool Ranges" | Timestamp
     Get-HPOVAddressPoolSubnet -NetworkId $prod_subnet | New-HPOVAddressPoolRange -Name Mgmt -Start $prod_pool_start -End $prod_pool_end
@@ -131,7 +131,7 @@ function Rename_Enclosures
     #
     # Sleep for 60 seconds to allow Enclosure renaming to complete
     #
-    Sleep -Seconds 60
+    Start-Sleep -Seconds 60
     Write-Output "All Enclosures Renamed" | Timestamp
 }
 
@@ -215,10 +215,28 @@ function Create_Logical_Interconnect_Groups
 }
 
 
+function Add_Licenses
+{
+    Write-Output "Adding OneView Advanced Licenses" | Timestamp
+    $ov_license_1 = Read-Host "Optional: OneView Advanced 16-Server License"
+    New-HPOVLicense -LicenseKey '$ov_license_1'
+    $ov_license_2 = Read-Host "Optional: OneView Advanced 16-Server License"
+    New-HPOVLicense -LicenseKey '$ov_license_2'
+    
+    Write-Output "Adding Synergy 8GB FC Licenses" | Timestamp
+    $fc_license_1 = Read-Host "Optional: Synergy 8GB FC License"
+    New-HPOVLicense -LicenseKey '$fc_license_1'
+    $fc_license_2 = Read-Host "Optional: Synergy 8GB FC License"
+    New-HPOVLicense -LicenseKey '$fc_license_2'
+
+    Write-Output "All Licenses Added" | Timestamp
+}
+
+
 function Add_Firmware_Bundle
 {
     Write-Output "Adding Firmware Bundles" | Timestamp
-    $firmware_bundle = Read-Host "Service Pack for ProLiant ISO Location"
+    $firmware_bundle = Read-Host "Optional: Specify location of Service Pack for ProLiant ISO file"
     if (Test-Path $firmware_bundle) {   
         Add-HPOVBaseline -File $firmware_bundle | Wait-HPOVTaskComplete
     }
@@ -233,7 +251,7 @@ function Create_OS_Deployment_Server
 {
     Write-Output "Configuring OS Deployment Servers" | Timestamp
     $ManagementNetwork = Get-HPOVNetwork -Type Ethernet -Name "Mgmt"
-    Get-HPOVImageStreamerAppliance | Select -First 1 | New-HPOVOSDeploymentServer -Name "LE1 Image Streamer" -ManagementNetwork $ManagementNetwork -Description "Image Streamer for Logical Enclosure 1" | Wait-HPOVTaskComplete
+    Get-HPOVImageStreamerAppliance | Select-Object -First 1 | New-HPOVOSDeploymentServer -Name "LE1 Image Streamer" -ManagementNetwork $ManagementNetwork -Description "Image Streamer for Logical Enclosure 1" | Wait-HPOVTaskComplete
     Write-Output "OS Deployment Server Configured" | Timestamp
 }
 
@@ -343,6 +361,33 @@ function PowerOff_All_Servers
 }
 
 
+function Add_Users
+{
+    Write-Output "Adding New Users" | Timestamp
+
+    New-HPOVUser -UserName BackupAdmin -FullName "Backup Administrator" -Password BackupPasswd -Roles "Backup Administrator" -EmailAddress "backup@hpe.com" -OfficePhone "(111) 111-1111" -MobilePhone "(999) 999-9999"
+    New-HPOVUser -UserName NetworkAdmin -FullName "Network Administrator" -Password NetworkPasswd -Roles "Network Administrator" -EmailAddress "network@hpe.com" -OfficePhone "(222) 222-2222" -MobilePhone "(888) 888-8888"
+    New-HPOVUser -UserName ServerAdmin -FullName "Server Administrator" -Password ServerPasswd -Roles "Server Administrator" -EmailAddress "server@hpe.com" -OfficePhone "(333) 333-3333" -MobilePhone "(777) 777-7777"
+    New-HPOVUser -UserName StorageAdmin -FullName "Storage Administrator" -Password StoragePasswd -Roles "Storage Administrator" -EmailAddress "storage@hpe.com" -OfficePhone "(444) 444-4444" -MobilePhone "(666) 666-6666"
+    New-HPOVUser -UserName SoftwareAdmin -FullName "Software Administrator" -Password SoftwarePasswd -Roles "Software Administrator" -EmailAddress "software@hpe.com" -OfficePhone "(555) 555-5555" -MobilePhone "(123) 234-3456"
+
+    Write-Output "All New Users Added" | Timestamp
+}
+
+
+function Add_Scopes
+{
+    Write-Output "Adding New Scopes" | Timestamp
+
+    New-HPOVScope -Name FinanceScope -Description "Finance Scope of Resources"
+    $Resources += Get-HPOVNetwork -Name Prod*
+    $Resources += Get-HPOVEnclosure -Name Synergy-Encl-1
+    Get-HPOVScope -Name FinanceScope | Add-HPOVResourceToScope -InputObject $Resources
+
+    Write-Output "All New Scopes Added" | Timestamp
+}
+
+
 ##############################################################################
 #
 # Main Program
@@ -376,21 +421,24 @@ filter Timestamp {"$(Get-Date -Format G): $_"}
 
 Write-Output "Configuring HPE Synergy Appliance" | Timestamp
 
-Add_Remote_Enclosures
-Rename_Enclosures
-PowerOff_All_Servers
-Configure_SAN_Managers
-Configure_Networks
-Add_Storage
 Add_Firmware_Bundle
-Create_OS_Deployment_Server
-Create_Logical_Interconnect_Groups
-Create_Uplink_Sets
-Create_Enclosure_Group
-Create_Logical_Enclosure
-Create_Server_Profile_Template_Local_Storage
-Create_Server_Profile_Template_SAN_Storage
-Create_Server_Profile_Local_Storage
-Create_Server_Profile_SAN_Storage
+Add_Licenses
+#Add_Remote_Enclosures
+#Rename_Enclosures
+#PowerOff_All_Servers
+#Configure_SAN_Managers
+#Configure_Networks
+#Add_Storage
+#Add_Users
+#Create_OS_Deployment_Server
+#Create_Logical_Interconnect_Groups
+#Create_Uplink_Sets
+#Create_Enclosure_Group
+#Create_Logical_Enclosure
+#Create_Server_Profile_Template_Local_Storage
+#Create_Server_Profile_Template_SAN_Storage
+#Create_Server_Profile_Local_Storage
+#Create_Server_Profile_SAN_Storage
+#Add_Scopes
 
 Write-Output "HPE Synergy Appliance Configuration Complete" | Timestamp
