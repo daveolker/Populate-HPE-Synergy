@@ -217,18 +217,28 @@ function Create_Logical_Interconnect_Groups
 
 function Add_Licenses
 {
-    Write-Output "Adding OneView Advanced Licenses" | Timestamp
-    $ov_license_1 = Read-Host "Optional: OneView Advanced 16-Server License"
-    New-HPOVLicense -LicenseKey $ov_license_1
-    $ov_license_2 = Read-Host "Optional: OneView Advanced 16-Server License"
-    New-HPOVLicense -LicenseKey $ov_license_2
+    Write-Output "Adding Two OneView Advanced Licenses" | Timestamp
+    $ov_license_1 = Read-Host "Optional: Enter First OneView Advanced 16-Server License"
+    if ($ov_license_1) {
+        New-HPOVLicense -LicenseKey $ov_license_1
+    }
     
-    Write-Output "Adding Synergy 8GB FC Licenses" | Timestamp
-    $fc_license_1 = Read-Host "Optional: Synergy 8GB FC License"
-    New-HPOVLicense -LicenseKey $fc_license_1
-    $fc_license_2 = Read-Host "Optional: Synergy 8GB FC License"
-    New-HPOVLicense -LicenseKey $fc_license_2
-
+    $ov_license_2 = Read-Host "Optional: Enter Second OneView Advanced 16-Server License"
+    if ($ov_license_2) {
+        New-HPOVLicense -LicenseKey $ov_license_2
+    }
+    
+    Write-Output "Adding Two Synergy 8GB FC Licenses" | Timestamp
+    $fc_license_1 = Read-Host "Optional: Enter First Synergy 8GB FC License"
+    if ($fc_license_1) {
+        New-HPOVLicense -LicenseKey $fc_license_1
+    }
+    
+    $fc_license_2 = Read-Host "Optional: Enter Second Synergy 8GB FC License"
+    if ($fc_license_2) {
+        New-HPOVLicense -LicenseKey $fc_license_2
+    }
+    
     Write-Output "All Licenses Added" | Timestamp
 }
 
@@ -237,12 +247,15 @@ function Add_Firmware_Bundle
 {
     Write-Output "Adding Firmware Bundles" | Timestamp
     $firmware_bundle = Read-Host "Optional: Specify location of Service Pack for ProLiant ISO file"
-    if (Test-Path $firmware_bundle) {   
-        Add-HPOVBaseline -File $firmware_bundle | Wait-HPOVTaskComplete
+    if ($firmware_bundle) {
+        if (Test-Path $firmware_bundle) {   
+            Add-HPOVBaseline -File $firmware_bundle | Wait-HPOVTaskComplete
+        }
+        else { 
+            Write-Output "Service Pack for ProLiant file '$firmware_bundle' not found.  Skipping firmware upload."
+        }
     }
-    else { 
-        Write-Output "Service Pack for ProLiant file '$firmware_bundle' not found.  Skipping firmware upload."
-    }
+
     Write-Output "Firmware Bundle Added" | Timestamp
 }
 
