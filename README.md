@@ -1,14 +1,16 @@
 # Populate HPE Synergy
 Configure and populate an HPE Synergy Data Center Simulator virtual appliance for demonstration, educational, and custom integration purposes.
 
+##
 ## The HPE Synergy Data Center Simulator is an HPE proprietary tool available for HPE employee and Partner use only. 
+##
 
 The HPE Synergy Data Center Simulator is a useful tool for learning about the HPE Synergy Composable Infrastructure platform and the HPE OneView management interface. The tool simulates a datacenter comprised of multiple racks of HPE Synergy hardware, 3PAR storage arrays, SAN managers, and other simulated infrastructure. The simulator looks and acts just like a real, physical Synergy environment. It uses the same RESTful interface as real Synergy and OneView instances, making it the perfect environment for learning how to implement and demonstrate Infrastructure-as-Code.
 
 # How to use the scripts
 This package contains two primary scripts and one configuration file.  
 
-## Populate_HPE_Synergy.sh
+## Populate_HPE_Synergy.ps1
 
 
 
