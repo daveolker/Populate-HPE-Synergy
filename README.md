@@ -5,23 +5,37 @@ Configure and populate an HPE Synergy Data Center Simulator virtual appliance fo
 ## The HPE Synergy Data Center Simulator is an HPE proprietary tool available for HPE employee and Partner use only. 
 ##
 
-The HPE Synergy Data Center Simulator is a useful tool for learning about the HPE Synergy Composable Infrastructure platform and the HPE OneView management interface. The tool simulates a datacenter comprised of multiple racks of HPE Synergy hardware, 3PAR storage arrays, SAN managers, and other simulated infrastructure. The simulator looks and acts just like a real, physical Synergy environment. It uses the same RESTful interface as real Synergy and OneView instances, making it the perfect environment for learning how to implement and demonstrate Infrastructure-as-Code.
+The HPE Synergy Data Center Simulator (DCS) is a useful tool for learning about the HPE Synergy Composable Infrastructure platform and the HPE OneView management interface. The tool simulates a datacenter comprised of multiple racks of HPE Synergy hardware, 3PAR storage arrays, SAN managers, and other simulated infrastructure. The simulator looks and acts just like a real, physical Synergy environment. It uses the same RESTful interface as real Synergy and OneView instances, making it the perfect environment for learning how to implement and demonstrate Infrastructure-as-Code.
+
+The Populate HPE Synergy scripts work with the Data Center Simulator to instantiate all of the simulated hardware and components availble in the appliance, making it a much more feature-rich environment to demonstrate and learn how to use features such as Server Profile Templates, Server Profiles, etc.
 
 # How to use the scripts
-This package contains two primary scripts and one configuration file.  
+This package contains two primary scripts and one configuration file. These are PowerShell scripts and they require the HPE OneView PowerShell library found here: https://github.com/HewlettPackard/POSH-HPOneView.
 
 ## Populate_HPE_Synergy.ps1
+This script connects with the Synergy DCS appliance and discovers/configures all the simulated hardware.  When the script is run, it prompts for the hostname or IP address of the Synergy appliance, the Administrator user name (usually Administrator), and the Administrator password.
 
+The script does the following:
 
+* Prompts the user for the location of a Service Pack for ProLiant to upload as a Firmware Bundle
+* Prompts the user for OneView Advanced Licenses, if available
+* Prompts the user for Synergy 8GB Fibre Channel Licenses, if available
+* Configures two additional Synergy Enclosures
+* Renames all five Synergy Enclosures
+* Powers off all Compute Modules
+* Configures the simulated Cisco SAN Managers
+* Configures multiple Ethernet, Fibre Channel, and FCoE Networks
+* Configures multiple 3PAR Storage Arrays, Volume Templates, and Volumes
+* Adds various Users with different permissions
+* Deploys an HPE Image Streamer OS Deployment instance
+* Creates Logical Interconnect Groups
+* Creates multiple Uplink Sets
+* Creates an Enclosure Group
+* Creates a Logical Enclosure
+* Creates multiple sample Server Profile Templates
+* Creates multiple sample Server Profiles
+* Adds various Scopes
 
-# How to use the scripts
-Scripts and files included in an OSBP in ICsp intended to install Docker EE on Proliant, Blades and Synergy using ICsp 7.6. This has not been tested with 7.6.1 yet but there is no reason why it shouldn't work on it too. The OS versions used are:
-
-* RHEL 7.2
-* SLES 12 SP1
-* Ubuntu Server 14.04
-
-In the same way, the scripts should work with different releases of each OS version (for instance, any RHEL 7.x or SLES 12 SP2), but this hasn't been tested and we can't guarantee that it will work as expected.
 
 ## RHEL
 In order to create an OSBP that installs Docker EE on a RHEL7 server, we need save the provided OOTB RedHat 7.2 OSBP into a new OSBP and perform the following changes:
