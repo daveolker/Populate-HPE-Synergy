@@ -54,3 +54,21 @@ This script does the following:
 * Removes all non-default Users
 * Removes all Scopes
 * Deletes all uploaded Firmware Bundles (Service Pack for ProLiant)
+
+## Populate_HPE_Synergy-Params.txt
+This configuration file specifies the two networks used by the HPE Synergy DCS Appliance. The two networks are the "Production" and "Deployment" networks. Each network configuration consists of a Subnet definition, the Gateway for that subnet, the Subnet mask, and a pool of IP addresses in the subnet (starting and ending).
+
+This configuration file is designed to work out-of-the-box when the HPE Synergy DCS appliance is deployed via VirtualBox using a host-only networking configuration. It may require changes depending on the Hypervisor (i.e. VMware, Hyper-V, VirtualBox) and the networking configuration used when deploying the DCS virtual appliance.
+
+The parameters in the configuration file are:
+
+* prod_subnet							Production Subnet (192.168.56.0)
+* prod_gateway							Production Gateway (192.168.56.1)
+* prod_pool_start						Beginning of Production Subnet Pool (192.168.56.200)
+* prod_pool_end							End of Production Subnet Pool (192.168.56.254)
+* prod_mask								Production Subnet Mask (255.255.255.0)
+* deploy_subnet=10.1.1.0
+* deploy_gateway=10.1.1.1
+* deploy_pool_start=10.1.1.2
+* deploy_pool_end=10.1.1.254
+* deploy_mask=255.255.255.0
