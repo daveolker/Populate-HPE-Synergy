@@ -61,7 +61,7 @@ This configuration file specifies the two networks used by the HPE Synergy DCS A
 This configuration file is designed to work out-of-the-box when the HPE Synergy DCS appliance is deployed via VirtualBox using a host-only networking configuration. It may require changes depending on the Hypervisor (i.e. VMware, Hyper-V, VirtualBox) and the networking configuration used when deploying the DCS virtual appliance.
 
 The parameters in the configuration file are:
-
+```
 * prod_subnet            Production Subnet (192.168.56.0)
 * prod_gateway           Production Gateway (192.168.56.1)
 * prod_pool_start        Beginning of Production Subnet Pool (192.168.56.200)
@@ -72,3 +72,4 @@ The parameters in the configuration file are:
 * deploy_pool_start      Beginning of Deployment Subnet Pool (10.1.1.2)
 * deploy_pool_end        End of Deployment Subnet Pool (10.1.1.254)
 * deploy_mask            Deployment Subnet Mask (255.255.255.0)
+```
