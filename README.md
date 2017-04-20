@@ -62,13 +62,13 @@ This configuration file is designed to work out-of-the-box when the HPE Synergy 
 
 The parameters in the configuration file are:
 
-* prod_subnet							Production Subnet (192.168.56.0)
-* prod_gateway							Production Gateway (192.168.56.1)
-* prod_pool_start						Beginning of Production Subnet Pool (192.168.56.200)
-* prod_pool_end							End of Production Subnet Pool (192.168.56.254)
-* prod_mask								Production Subnet Mask (255.255.255.0)
-* deploy_subnet=10.1.1.0
-* deploy_gateway=10.1.1.1
-* deploy_pool_start=10.1.1.2
-* deploy_pool_end=10.1.1.254
-* deploy_mask=255.255.255.0
+* prod_subnet            Production Subnet (192.168.56.0)
+* prod_gateway           Production Gateway (192.168.56.1)
+* prod_pool_start        Beginning of Production Subnet Pool (192.168.56.200)
+* prod_pool_end          End of Production Subnet Pool (192.168.56.254)
+* prod_mask              Production Subnet Mask (255.255.255.0)
+* deploy_subnet          Deployment Subnet (10.1.1.0)
+* deploy_gateway         Deployment Gateway (10.1.1.1)
+* deploy_pool_start      Beginning of Deployment Subnet Pool (10.1.1.2)
+* deploy_pool_end        End of Deployment Subnet Pool (10.1.1.254)
+* deploy_mask            Deployment Subnet Mask (255.255.255.0)
