@@ -1,7 +1,7 @@
 # Populate HPE Synergy
 Configure and populate an HPE Synergy Data Center Simulator virtual appliance for demonstration, educational, and custom integration purposes.
 
-##
+#
 ## The HPE Synergy Data Center Simulator is an HPE proprietary tool available for HPE employee and Partner use only. 
 #
 
