@@ -50,23 +50,6 @@ function Configure_SAN_Managers
 
 function Configure_Networks
 {
-    ##########################################################################
-    #
-    # Process variables in the Populate_HPE_Synergy-Params.txt file.
-    #
-    ##########################################################################
-    New-Variable -Name config_file -Value .\Populate_HPE_Synergy-Params.txt
-
-    if (Test-Path $config_file) {    
-        Get-Content $config_file | Where-Object { !$_.StartsWith("#") } | Foreach-Object {
-            $var = $_.Split('=')
-            New-Variable -Name $var[0] -Value $var[1]
-        }
-    } else { 
-        Write-Output "Configuration file '$config_file' not found.  Exiting." | Timestamp
-        Exit
-    }
-    
     Write-Output "Adding IPv4 Subnets" | Timestamp
     New-HPOVAddressPoolSubnet -Domain "mgmt.lan" -Gateway $prod_gateway -NetworkId $prod_subnet -SubnetMask $prod_mask
     New-HPOVAddressPoolSubnet -Domain "deployment.lan" -Gateway $deploy_gateway -NetworkId $deploy_subnet -SubnetMask $deploy_mask
@@ -188,23 +171,6 @@ function Create_Uplink_Sets
 
 function Create_Enclosure_Group
 {
-    ##########################################################################
-    #
-    # Process variables in the Populate_HPE_Synergy-Params.txt file.
-    #
-    ##########################################################################
-    Write-Output "Creating Enclosure Group" | Timestamp
-    New-Variable -Name config_file -Value .\Populate_HPE_Synergy-Params.txt
-    if (Test-Path $config_file) {    
-        Get-Content $config_file | Where-Object { !$_.StartsWith("#") } | Foreach-Object {
-            $var = $_.Split('=')
-            New-Variable -Name $var[0] -Value $var[1]
-        }
-    } else { 
-        Write-Output "Configuration file '$config_file' not found.  Exiting."
-        Exit
-    }
-    
     $AddressPool = Get-HPOVAddressPoolSubnet -NetworkId $deploy_subnet -ErrorAction Stop | Get-HPOVAddressPoolRange
     $3FrameVCLIG = Get-HPOVLogicalInterconnectGroup -Name LIG-FlexFabric
     $SasLIG = Get-HPOVLogicalInterconnectGroup -Name LIG-SAS
@@ -558,28 +524,47 @@ if (-not $ConnectedSessions)
 
 filter Timestamp {"$(Get-Date -Format G): $_"}
 
+
+##########################################################################
+#
+# Process variables in the Populate_HPE_Synergy-Params.txt file.
+#
+##########################################################################
+New-Variable -Name config_file -Value .\Populate_HPE_Synergy-Params.txt -Scope Global -Force
+
+if (Test-Path $config_file) {
+    Get-Content $config_file | Where-Object { !$_.StartsWith("#") } | Foreach-Object {
+        $var = $_.Split('=')
+        New-Variable -Name $var[0] -Value $var[1] -Scope Global -Force
+    }
+} else { 
+    Write-Output "Configuration file '$config_file' not found.  Exiting." | Timestamp
+    Exit
+}
+
+
 Write-Output "Configuring HPE Synergy Appliance" | Timestamp
 
-Add_Firmware_Bundle
-Add_Licenses
-Add_Remote_Enclosures
-Rename_Enclosures
-PowerOff_All_Servers
-Configure_SAN_Managers
-Configure_Networks
-Add_Storage
-Add_Users
-Create_OS_Deployment_Server
-Create_Logical_Interconnect_Groups
-Create_Uplink_Sets
-Create_Enclosure_Group
-Create_Logical_Enclosure
-Add_Scopes
-Create_Server_Profile_Template_SY480_RHEL_Local_Storage
-Create_Server_Profile_Template_SY660_Windows_SAN_Storage
-Create_Server_Profile_Template_SY480_ESX_SAN_Storage
-Create_Server_Profile_SY480_RHEL_Local_Storage
-Create_Server_Profile_SY660_Windows_SAN_Storage
-Create_Server_Profile_SY480_ESX_SAN_Storage
+#Add_Firmware_Bundle
+#Add_Licenses
+#Add_Remote_Enclosures
+#Rename_Enclosures
+#PowerOff_All_Servers
+#Configure_SAN_Managers
+#Configure_Networks
+#Add_Storage
+#Add_Users
+#Create_OS_Deployment_Server
+#Create_Logical_Interconnect_Groups
+#Create_Uplink_Sets
+#Create_Enclosure_Group
+#Create_Logical_Enclosure
+#Add_Scopes
+#Create_Server_Profile_Template_SY480_RHEL_Local_Storage
+#Create_Server_Profile_Template_SY660_Windows_SAN_Storage
+#Create_Server_Profile_Template_SY480_ESX_SAN_Storage
+#Create_Server_Profile_SY480_RHEL_Local_Storage
+#Create_Server_Profile_SY660_Windows_SAN_Storage
+#Create_Server_Profile_SY480_ESX_SAN_Storage
 
 Write-Output "HPE Synergy Appliance Configuration Complete" | Timestamp
