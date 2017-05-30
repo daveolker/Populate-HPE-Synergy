@@ -127,44 +127,60 @@ function Add_Storage
 function Rename_Enclosures
 {
     Write-Output "Renaming Enclosures" | Timestamp
-    Get-HPOVEnclosure -Name 0000A66101 -ErrorAction SilentlyContinue | Set-HPOVEnclosure -Name Synergy-Encl-1 | Wait-HPOVTaskComplete
-    Get-HPOVEnclosure -Name 0000A66102 -ErrorAction SilentlyContinue | Set-HPOVEnclosure -Name Synergy-Encl-2 | Wait-HPOVTaskComplete
-    Get-HPOVEnclosure -Name 0000A66103 -ErrorAction SilentlyContinue | Set-HPOVEnclosure -Name Synergy-Encl-3 | Wait-HPOVTaskComplete
-    Get-HPOVEnclosure -Name 0000A66104 -ErrorAction SilentlyContinue | Set-HPOVEnclosure -Name Synergy-Encl-4 | Wait-HPOVTaskComplete
-    Get-HPOVEnclosure -Name 0000A66105 -ErrorAction SilentlyContinue | Set-HPOVEnclosure -Name Synergy-Encl-5 | Wait-HPOVTaskComplete
-    #
-    # Sleep for 60 seconds to allow Enclosure renaming to complete
-    #
-    Start-Sleep -Seconds 60
+    $Enc = Get-HPOVEnclosure -Name 0000A66101 -ErrorAction SilentlyContinue
+    Set-HPOVEnclosure -Name Synergy-Encl-1 -Enclosure $Enc | Wait-HPOVTaskComplete
+
+    $Enc = Get-HPOVEnclosure -Name 0000A66102 -ErrorAction SilentlyContinue
+    Set-HPOVEnclosure -Name Synergy-Encl-2 -Enclosure $Enc | Wait-HPOVTaskComplete
+    
+    $Enc = Get-HPOVEnclosure -Name 0000A66103 -ErrorAction SilentlyContinue
+    Set-HPOVEnclosure -Name Synergy-Encl-3 -Enclosure $Enc | Wait-HPOVTaskComplete
+    
+    $Enc = Get-HPOVEnclosure -Name 0000A66104 -ErrorAction SilentlyContinue
+    Set-HPOVEnclosure -Name Synergy-Encl-4 -Enclosure $Enc | Wait-HPOVTaskComplete
+    
+    $Enc = Get-HPOVEnclosure -Name 0000A66105 -ErrorAction SilentlyContinue
+    Set-HPOVEnclosure -Name Synergy-Encl-5 -Enclosure $Enc | Wait-HPOVTaskComplete
+    
     Write-Output "All Enclosures Renamed" | Timestamp
 }
 
 
 function Create_Uplink_Sets
 {
-    Write-Output "Adding Fibre Channel Uplink Sets" | Timestamp
+    Write-Output "Adding Fibre Channel and FCoE Uplink Sets" | Timestamp
     $LIGFlex = Get-HPOVLogicalInterconnectGroup -Name "LIG-FlexFabric"
-    New-HPOVUplinkSet -Resource $LIGFlex -Name "US-SAN-A-FC" -Type FibreChannel -Networks "SAN A FC" -UplinkPorts "Enclosure1:BAY3:Q2.1"
+    $SAN_A_FC = Get-HPOVNetwork -Name "SAN A FC"
+    New-HPOVUplinkSet -Resource $LIGFlex -Name "US-SAN-A-FC" -Type FibreChannel -Networks $SAN_A_FC -UplinkPorts "Enclosure1:BAY3:Q2.1" | Wait-HPOVTaskComplete
+
     $LIGFlex = Get-HPOVLogicalInterconnectGroup -Name "LIG-FlexFabric"
-    New-HPOVUplinkSet -Resource $LIGFlex -Name "US-SAN-B-FC" -Type FibreChannel -Networks "SAN B FC" -UplinkPorts "Enclosure2:BAY6:Q2.1"
+    $SAN_B_FC = Get-HPOVNetwork -Name "SAN B FC"
+    New-HPOVUplinkSet -Resource $LIGFlex -Name "US-SAN-B-FC" -Type FibreChannel -Networks $SAN_B_FC -UplinkPorts "Enclosure2:BAY6:Q2.1" | Wait-HPOVTaskComplete
     
-    Write-Output "Adding FCoE Uplink Sets" | Timestamp
     $LIGFlex = Get-HPOVLogicalInterconnectGroup -Name "LIG-FlexFabric"
-    New-HPOVUplinkSet -Resource $LIGFlex -Name "US-SAN-A-FCoE" -Type Ethernet -Networks "SAN A FCoE" -UplinkPorts "Enclosure1:BAY3:Q1.1" -LacpTimer Short
+    $SAN_A_FCoE = Get-HPOVNetwork -Name "SAN A FCoE"
+    New-HPOVUplinkSet -Resource $LIGFlex -Name "US-SAN-A-FCoE" -Type Ethernet -Networks $SAN_A_FCoE -UplinkPorts "Enclosure1:BAY3:Q1.1" -LacpTimer Short | Wait-HPOVTaskComplete
+    
     $LIGFlex = Get-HPOVLogicalInterconnectGroup -Name "LIG-FlexFabric"
-    New-HPOVUplinkSet -Resource $LIGFlex -Name "US-SAN-B-FCoE" -Type Ethernet -Networks "SAN B FCoE" -UplinkPorts "Enclosure2:BAY6:Q1.1" -LacpTimer Short
+    $SAN_B_FCoE = Get-HPOVNetwork -Name "SAN B FCoE"
+    New-HPOVUplinkSet -Resource $LIGFlex -Name "US-SAN-B-FCoE" -Type Ethernet -Networks $SAN_B_FCoE -UplinkPorts "Enclosure2:BAY6:Q1.1" -LacpTimer Short | Wait-HPOVTaskComplete
 
     Write-Output "Adding FlexFabric Uplink Sets" | Timestamp
     $LIGFlex = Get-HPOVLogicalInterconnectGroup -Name "LIG-FlexFabric"
-    New-HPOVUplinkSet -Resource $LIGFlex -Name "US-ESX-Mgmt" -Type Ethernet -Networks "ESX Mgmt" -UplinkPorts "Enclosure1:Bay3:Q1.2","Enclosure2:Bay6:Q1.2"
+    $ESX_Mgmt = Get-HPOVNetwork -Name "ESX Mgmt"
+    New-HPOVUplinkSet -Resource $LIGFlex -Name "US-ESX-Mgmt" -Type Ethernet -Networks $ESX_Mgmt -UplinkPorts "Enclosure1:Bay3:Q1.2","Enclosure2:Bay6:Q1.2" | Wait-HPOVTaskComplete
+    
     $LIGFlex = Get-HPOVLogicalInterconnectGroup -Name "LIG-FlexFabric"
-    New-HPOVUplinkSet -Resource $LIGFlex -Name "US-ESX-vMotion" -Type Ethernet -Networks "ESX vMotion" -UplinkPorts "Enclosure1:Bay3:Q1.3","Enclosure2:Bay6:Q1.3"
+    $ESX_vMotion = Get-HPOVNetwork -Name "ESX vMotion"
+    New-HPOVUplinkSet -Resource $LIGFlex -Name "US-ESX-vMotion" -Type Ethernet -Networks $ESX_vMotion -UplinkPorts "Enclosure1:Bay3:Q1.3","Enclosure2:Bay6:Q1.3" | Wait-HPOVTaskComplete
+    
     $LIGFlex = Get-HPOVLogicalInterconnectGroup -Name "LIG-FlexFabric"
-    New-HPOVUplinkSet -Resource $LIGFlex -Name "US-Prod" -Type Ethernet -Networks "Prod_1101","Prod_1102","Prod_1103","Prod_1104" -UplinkPorts "Enclosure1:Bay3:Q1.4","Enclosure2:Bay6:Q1.4"
+    $Prod_Nets = Get-HPOVNetwork -Name "Prod*"
+    New-HPOVUplinkSet -Resource $LIGFlex -Name "US-Prod" -Type Ethernet -Networks $Prod_Nets -UplinkPorts "Enclosure1:Bay3:Q1.4","Enclosure2:Bay6:Q1.4" | Wait-HPOVTaskComplete
     
     Write-Output "Adding ImageStreamer Uplink Sets" | Timestamp
     $ImageStreamerDeploymentNetworkObject = Get-HPOVNetwork -Name "Deployment" -ErrorAction Stop
-    Get-HPOVLogicalInterconnectGroup -Name "LIG-FlexFabric" -ErrorAction Stop | New-HPOVUplinkSet -Name "US-Image Streamer" -Type ImageStreamer -Networks $ImageStreamerDeploymentNetworkObject -UplinkPorts "Enclosure1:Bay3:Q5.1","Enclosure1:Bay3:Q6.1","Enclosure2:Bay6:Q5.1","Enclosure2:Bay6:Q6.1"
+    Get-HPOVLogicalInterconnectGroup -Name "LIG-FlexFabric" -ErrorAction Stop | New-HPOVUplinkSet -Name "US-Image Streamer" -Type ImageStreamer -Networks $ImageStreamerDeploymentNetworkObject -UplinkPorts "Enclosure1:Bay3:Q5.1","Enclosure1:Bay3:Q6.1","Enclosure2:Bay6:Q5.1","Enclosure2:Bay6:Q6.1" | Wait-HPOVTaskComplete
     
     Write-Output "All Uplink Sets Configured" | Timestamp
 }
@@ -204,7 +220,7 @@ function Create_Logical_Enclosure
     Write-Output "Creating Logical Enclosure" | Timestamp
     $EG = Get-HPOVEnclosureGroup -Name EG-Synergy-Local
     $Encl = Get-HPOVEnclosure -Name Synergy-Encl-1
-    New-HPOVLogicalEnclosure -EnclosureGroup $EG -Name LE-Synergy-Local -Enclosure $Encl
+    New-HPOVLogicalEnclosure -EnclosureGroup $EG -Name LE-Synergy-Local -Enclosure $Encl | Wait-HPOVTaskComplete
     Write-Output "Logical Enclosure Created" | Timestamp
 }
 
@@ -279,7 +295,8 @@ function Create_Server_Profile_Template_SY480_RHEL_Local_Storage
     
     $SY480Gen9SHT      = Get-HPOVServerHardwareTypes -name "SY 480 Gen9 1" -ErrorAction Stop
     $EnclGroup         = Get-HPOVEnclosureGroup -Name "EG-Synergy-Local" -ErrorAction Stop
-    $FWBaseline        = Get-HPOVBaseline -SppName "Service Pack for ProLiant" -Version "2017.04.0" -ErrorAction Stop
+    #$FWBaseline        = Get-HPOVBaseline -SppName "Service Pack for ProLiant" -Version "2017.04.0" -ErrorAction Stop
+    $FWBaseline        = Get-HPOVBaseline
     $Eth1              = Get-HPOVNetwork -Name "Prod_1101" | New-HPOVServerProfileConnection -ConnectionID 1 -Name 'Prod-1101' -PortId "Mezz 3:1-c" -ErrorAction Stop
     $Eth2              = Get-HPOVNetwork -Name "Prod_1102" | New-HPOVServerProfileConnection -ConnectionID 2 -Name 'Prod-1102' -PortId "Mezz 3:2-c" -ErrorAction Stop
     $LogicalDisk       = New-HPOVServerProfileLogicalDisk -Name "SAS RAID1 SSD" -RAID RAID1 -NumberofDrives 2 -DriveType SASSSD -ErrorAction Stop
@@ -342,7 +359,8 @@ function Create_Server_Profile_Template_SY660_Windows_SAN_Storage
 
     $SY660Gen9SHT      = Get-HPOVServerHardwareTypes -name "SY 660 Gen9 1" -ErrorAction Stop
     $EnclGroup         = Get-HPOVEnclosureGroup -Name "EG-Synergy-Local" -ErrorAction Stop
-    $FWBaseline        = Get-HPOVBaseline -SppName "Service Pack for ProLiant" -Version "2017.04.0" -ErrorAction Stop
+    #$FWBaseline        = Get-HPOVBaseline -SppName "Service Pack for ProLiant" -Version "2017.04.0" -ErrorAction Stop
+    $FWBaseline        = Get-HPOVBaseline
     $Eth1              = Get-HPOVNetwork -Name "Prod_1101" | New-HPOVServerProfileConnection -ConnectionID 1 -Name 'Prod-1101' -PortId "Mezz 3:1-c" -ErrorAction Stop
     $Eth2              = Get-HPOVNetwork -Name "Prod_1102" | New-HPOVServerProfileConnection -ConnectionID 2 -Name 'Prod-1102' -PortId "Mezz 3:2-c" -ErrorAction Stop
     $FC1               = Get-HPOVNetwork -Name 'SAN A FC' | New-HPOVServerProfileConnection -connectionId 3 -ErrorAction Stop
@@ -406,7 +424,8 @@ function Create_Server_Profile_Template_SY480_ESX_SAN_Storage
 
     $SY660Gen9SHT      = Get-HPOVServerHardwareTypes -name "SY 480 Gen9 2" -ErrorAction Stop
     $EnclGroup         = Get-HPOVEnclosureGroup -Name "EG-Synergy-Local" -ErrorAction Stop
-    $FWBaseline        = Get-HPOVBaseline -SppName "Service Pack for ProLiant" -Version "2017.04.0" -ErrorAction Stop
+    #$FWBaseline        = Get-HPOVBaseline -SppName "Service Pack for ProLiant" -Version "2017.04.0" -ErrorAction Stop
+    $FWBaseline        = Get-HPOVBaseline
     $Eth1              = Get-HPOVNetwork -Name "Prod_1101" | New-HPOVServerProfileConnection -ConnectionID 1 -Name 'Prod-1101' -PortId "Mezz 3:1-c" -ErrorAction Stop
     $Eth2              = Get-HPOVNetwork -Name "Prod_1102" | New-HPOVServerProfileConnection -ConnectionID 2 -Name 'Prod-1102' -PortId "Mezz 3:2-c" -ErrorAction Stop
     $FC1               = Get-HPOVNetwork -Name 'SAN A FC' | New-HPOVServerProfileConnection -connectionId 3 -ErrorAction Stop

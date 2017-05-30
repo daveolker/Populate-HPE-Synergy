@@ -58,11 +58,11 @@ function Remove_Logical_Interconnect_Groups
 function Remove_OS_Deployment_Servers
 {
     Write-Output "Removing all OS Deployment Servers" | Timestamp
-    Get-HPOVOSDeploymentServer | Remove-HPOVOSDeploymentServer -Confirm:$false
+    Get-HPOVOSDeploymentServer | Remove-HPOVOSDeploymentServer -Confirm:$false | Wait-HPOVTaskComplete
     #
     # Sleep for 400 seconds to allow the OS Deployment Cluster to Form
     #
-    Sleep -Seconds 400
+    #Sleep -Seconds 400
     Write-Output "All OS Deployment Servers Removed" | Timestamp
 }
 
@@ -86,9 +86,21 @@ function Remove_Server_Profiles
 function Rename_Enclosures
 {
     Write-Output "Renaming Enclosures" | Timestamp
-    Get-HPOVEnclosure -Name Synergy-Encl-1 -ErrorAction SilentlyContinue | Set-HPOVEnclosure -Name "0000A66101" | Wait-HPOVTaskComplete
-    Get-HPOVEnclosure -Name Synergy-Encl-2 -ErrorAction SilentlyContinue | Set-HPOVEnclosure -Name "0000A66102" | Wait-HPOVTaskComplete
-    Get-HPOVEnclosure -Name Synergy-Encl-3 -ErrorAction SilentlyContinue | Set-HPOVEnclosure -Name "0000A66103" | Wait-HPOVTaskComplete
+    $Enc = Get-HPOVEnclosure -Name Synergy-Encl-1 -ErrorAction SilentlyContinue
+    Set-HPOVEnclosure -Name "0000A66101" -Enclosure $Enc | Wait-HPOVTaskComplete
+
+    $Enc = Get-HPOVEnclosure -Name Synergy-Encl-2 -ErrorAction SilentlyContinue
+    Set-HPOVEnclosure -Name "0000A66102" -Enclosure $Enc | Wait-HPOVTaskComplete
+
+    $Enc = Get-HPOVEnclosure -Name Synergy-Encl-3 -ErrorAction SilentlyContinue
+    Set-HPOVEnclosure -Name "0000A66103" -Enclosure $Enc | Wait-HPOVTaskComplete
+
+    $Enc = Get-HPOVEnclosure -Name Synergy-Encl-4 -ErrorAction SilentlyContinue
+    Set-HPOVEnclosure -Name "0000A66104" -Enclosure $Enc | Wait-HPOVTaskComplete
+
+    $Enc = Get-HPOVEnclosure -Name Synergy-Encl-5 -ErrorAction SilentlyContinue
+    Set-HPOVEnclosure -Name "0000A66105" -Enclosure $Enc | Wait-HPOVTaskComplete
+
     Write-Output "All Enclosures Renamed" | Timestamp
 }
 
@@ -248,8 +260,8 @@ Remove_Storage_Systems
 #
 #Remove_OS_Deployment_Servers
 
-Remove_Networks
 Remove_Network_Sets
+Remove_Networks
 Remove_IPv4_Address_Pool_Ranges
 Remove_IPv4_Subnets
 Remove_SAN_Managers
