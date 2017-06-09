@@ -365,11 +365,11 @@ function Create_Server_Profile_SY660_Windows_SAN_Storage
 {
     Write-Output "Creating SAN Storage Server Profile" | Timestamp
 
-    $DeploymentPlan = Get-HPOVOSDeploymentPlan -Name "Deployment Plan" -ErrorAction Stop
-    $Server         = Get-HPOVServer -ServerHardwareType $SY660Gen9SHT -NoProfile -ErrorAction Stop | Select-Object -First 1
     $SY660Gen9SHT   = Get-HPOVServerHardwareTypes -name "SY 660 Gen9 1" -ErrorAction Stop
     $Template       = Get-HPOVServerProfileTemplate -Name "HPE Synergy 660 Gen9 Windows with SAN Storage Template" -ErrorAction Stop
-    
+    $DeploymentPlan = Get-HPOVOSDeploymentPlan -Name "Deployment Plan" -ErrorAction Stop
+    $Server         = Get-HPOVServer -ServerHardwareType $SY660Gen9SHT -NoProfile -ErrorAction Stop | Select-Object -First 1
+        
     $params = @{
         AssignmentType        = "Bay";
         Description           = "HPE Synergy 660 Gen9 Server";
@@ -430,11 +430,11 @@ function Create_Server_Profile_SY480_ESX_SAN_Storage
 {
     Write-Output "Creating SAN Storage Server Profile" | Timestamp
 
-    $DeploymentPlan = Get-HPOVOSDeploymentPlan -Name "Deployment Plan" -ErrorAction Stop
-    $Server         = Get-HPOVServer -ServerHardwareType $SY480Gen9SHT -NoProfile -ErrorAction Stop | Select-Object -First 1
     $SY480Gen9SHT   = Get-HPOVServerHardwareTypes -name "SY 480 Gen9 2" -ErrorAction Stop
     $Template       = Get-HPOVServerProfileTemplate -Name "HPE Synergy 480 Gen9 ESX with SAN Storage Template" -ErrorAction Stop
-    
+    $DeploymentPlan = Get-HPOVOSDeploymentPlan -Name "Deployment Plan" -ErrorAction Stop
+    $Server         = Get-HPOVServer -ServerHardwareType $SY480Gen9SHT -NoProfile -ErrorAction Stop | Select-Object -First 1
+        
     $params = @{
         AssignmentType        = "Bay";
         Description           = "HPE Synergy 480 Gen9 Server";
@@ -545,26 +545,26 @@ if (Test-Path $config_file) {
 
 Write-Output "Configuring HPE Synergy Appliance" | Timestamp
 
-#Add_Firmware_Bundle
-#Add_Licenses
-#Add_Remote_Enclosures
-#Rename_Enclosures
-#PowerOff_All_Servers
-#Configure_SAN_Managers
-#Configure_Networks
-#Add_Storage
-#Add_Users
-#Create_OS_Deployment_Server
-#Create_Logical_Interconnect_Groups
-#Create_Uplink_Sets
-#Create_Enclosure_Group
-#Create_Logical_Enclosure
-#Add_Scopes
-#Create_Server_Profile_Template_SY480_RHEL_Local_Storage
-#Create_Server_Profile_Template_SY660_Windows_SAN_Storage
-#Create_Server_Profile_Template_SY480_ESX_SAN_Storage
-#Create_Server_Profile_SY480_RHEL_Local_Storage
-#Create_Server_Profile_SY660_Windows_SAN_Storage
-#Create_Server_Profile_SY480_ESX_SAN_Storage
+Add_Firmware_Bundle
+Add_Licenses
+Add_Remote_Enclosures
+Rename_Enclosures
+PowerOff_All_Servers
+Configure_SAN_Managers
+Configure_Networks
+Add_Storage
+Add_Users
+Create_OS_Deployment_Server
+Create_Logical_Interconnect_Groups
+Create_Uplink_Sets
+Create_Enclosure_Group
+Create_Logical_Enclosure
+Add_Scopes
+Create_Server_Profile_Template_SY480_RHEL_Local_Storage
+Create_Server_Profile_Template_SY660_Windows_SAN_Storage
+Create_Server_Profile_Template_SY480_ESX_SAN_Storage
+Create_Server_Profile_SY480_RHEL_Local_Storage
+Create_Server_Profile_SY660_Windows_SAN_Storage
+Create_Server_Profile_SY480_ESX_SAN_Storage
 
 Write-Output "HPE Synergy Appliance Configuration Complete" | Timestamp
