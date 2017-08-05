@@ -499,9 +499,9 @@ function Add_Scopes
 #
 ##############################################################################
 
-if (-not (get-module HPOneview.300)) 
+if (-not (get-module HPOneview.310)) 
 {
-    Import-Module HPOneView.300
+    Import-Module HPOneView.310
 }
 
 if (-not $ConnectedSessions) 
