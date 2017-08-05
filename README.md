@@ -18,8 +18,7 @@ This script connects with the Synergy DCS appliance and discovers/configures all
 This script does the following:
 
 * Prompts the user for the location of a Service Pack for ProLiant to upload as a Firmware Bundle
-* Prompts the user for OneView Advanced Licenses, if available
-* Prompts the user for Synergy 8GB Fibre Channel Licenses, if available
+* Prompts the user for a text file containing OneView and Synergy 8GB Fibre Channel Licenses
 * Configures two additional Synergy Enclosures
 * Renames all five Synergy Enclosures
 * Powers off all Compute Modules

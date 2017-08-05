@@ -3,7 +3,7 @@
 #
 # - Example script for de-configuring the HPE Synergy Appliance
 #
-#   VERSION 1.0
+#   VERSION 3.1
 #
 #   AUTHORS
 #   Dave Olker - Global Solutions Engineering (BEST)

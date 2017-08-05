@@ -3,7 +3,7 @@
 #
 # - Example script for configuring the HPE Synergy Appliance
 #
-#   VERSION 1.0
+#   VERSION 3.1
 #
 #   AUTHORS
 #   Dave Olker - HPE Global Solutions Engineering (BEST)
@@ -203,26 +203,11 @@ function Create_Logical_Interconnect_Groups
 
 function Add_Licenses
 {
-    Write-Output "Adding Two OneView Advanced Licenses" | Timestamp
-    $ov_license_1 = Read-Host "Optional: Enter First OneView Advanced 16-Server License"
-    if ($ov_license_1) {
-        New-HPOVLicense -LicenseKey $ov_license_1
-    }
+    Write-Output "Adding OneView and Synergy FC Licenses" | Timestamp
     
-    $ov_license_2 = Read-Host "Optional: Enter Second OneView Advanced 16-Server License"
-    if ($ov_license_2) {
-        New-HPOVLicense -LicenseKey $ov_license_2
-    }
-    
-    Write-Output "Adding Two Synergy 8GB FC Licenses" | Timestamp
-    $fc_license_1 = Read-Host "Optional: Enter First Synergy 8GB FC License"
-    if ($fc_license_1) {
-        New-HPOVLicense -LicenseKey $fc_license_1
-    }
-    
-    $fc_license_2 = Read-Host "Optional: Enter Second Synergy 8GB FC License"
-    if ($fc_license_2) {
-        New-HPOVLicense -LicenseKey $fc_license_2
+    $License_File = Read-Host -Prompt "Optional: Enter Filename Containing OneView and Synergy FC Licenses"
+    if ($License_File) {
+        New-HPOVLicense -File $License_File
     }
     
     Write-Output "All Licenses Added" | Timestamp
