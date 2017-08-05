@@ -42,8 +42,8 @@ function Add_Remote_Enclosures
 function Configure_SAN_Managers
 {
     Write-Output "Configuring SAN Managers" | Timestamp
-    Add-HPOVSanManager -Hostname 172.18.20.1 -SnmpUserName dcs-SHA-AES128 -SnmpAuthLevel AuthAndPriv -SnmpAuthPassword hpinvent! -SnmpAuthProtocol sha -SnmpPrivPassword hpinvent! -SnmpPrivProtocol aes-128 -Type Cisco -Port 161 | Wait-HPOVTaskComplete
-    Add-HPOVSanManager -Hostname 172.18.20.2 -SnmpUserName dcs-SHA-AES128 -SnmpAuthLevel AuthAndPriv -SnmpAuthPassword hpinvent! -SnmpAuthProtocol sha -SnmpPrivPassword hpinvent! -SnmpPrivProtocol aes-128 -Type Cisco -Port 161 | Wait-HPOVTaskComplete
+    Add-HPOVSanManager -Hostname 172.18.20.1 -SnmpUserName dcs-SHA-AES128 -SnmpAuthLevel AuthAndPriv -SnmpAuthPassword dcsdcsdcs -SnmpAuthProtocol sha -SnmpPrivPassword dcsdcsdcs -SnmpPrivProtocol aes-128 -Type Cisco -Port 161 | Wait-HPOVTaskComplete
+    Add-HPOVSanManager -Hostname 172.18.20.2 -SnmpUserName dcs-SHA-AES128 -SnmpAuthLevel AuthAndPriv -SnmpAuthPassword dcsdcsdcs -SnmpAuthProtocol sha -SnmpPrivPassword dcsdcsdcs -SnmpPrivProtocol aes-128 -Type Cisco -Port 161 | Wait-HPOVTaskComplete
     Write-Output "SAN Manager Configuration Complete" | Timestamp
 }
 
@@ -67,6 +67,9 @@ function Configure_Networks
     New-HPOVNetwork -Name Prod_1104 -MaximumBandwidth 20000 -Purpose General -Type Ethernet -TypicalBandwidth 2500 -VlanId 1104 -VLANType Tagged
     New-HPOVNetwork -Name Deployment -MaximumBandwidth 20000 -Purpose General -Type Ethernet -TypicalBandwidth 2500 -VlanId 1500 -VLANType Tagged
     New-HPOVNetwork -Name Mgmt -MaximumBandwidth 20000 -Purpose Management -Type Ethernet -TypicalBandwidth 2500 -VlanId 100 -VLANType Tagged
+    New-HPOVNetwork -Name SVCluster-1 -MaximumBandwidth 20000 -Purpose ISCSI -Type Ethernet -TypicalBandwidth 2500 -VlanId 301 -VLANType Tagged
+    New-HPOVNetwork -Name SVCluster-2 -MaximumBandwidth 20000 -Purpose ISCSI -Type Ethernet -TypicalBandwidth 2500 -VlanId 302 -VLANType Tagged
+    New-HPOVNetwork -Name SVCluster-3 -MaximumBandwidth 20000 -Purpose ISCSI -Type Ethernet -TypicalBandwidth 2500 -VlanId 303 -VLANType Tagged
     
     $Deploy_AddrPool = Get-HPOVAddressPoolSubnet -NetworkId $deploy_subnet
     Get-HPOVNetwork -Name Deployment | Set-HPOVNetwork -IPv4Subnet $Deploy_AddrPool
@@ -87,21 +90,36 @@ function Configure_Networks
 
 function Add_Storage
 {
-    Write-Output "Adding Storage Systems" | Timestamp
+    Write-Output "Adding 3PAR Storage Systems" | Timestamp
     Add-HPOVStorageSystem -Hostname 172.18.11.11 -Password dcs -Username dcs -Domain TestDomain | Wait-HPOVTaskComplete
     Add-HPOVStorageSystem -Hostname 172.18.11.12 -Password dcs -Username dcs -Domain TestDomain | Wait-HPOVTaskComplete
 
-    Write-Output "Adding Storage Pools" | Timestamp
+    Write-Output "Adding 3PAR Storage Pools" | Timestamp
     $StoragePools = "CPG-SSD", "CPG-SSD-AO", "CPG_FC-AO", "FST_CPG1", "FST_CPG2"
-    Add-HPOVStoragePool -StorageSystem "ThreePAR7200-6710" $StoragePools | Wait-HPOVTaskComplete
-    Add-HPOVStoragePool -StorageSystem "ThreePAR7200-6955" $StoragePools | Wait-HPOVTaskComplete
+    Add-HPOVStoragePool -StorageSystem ThreePAR-1 $StoragePools | Wait-HPOVTaskComplete
+    Add-HPOVStoragePool -StorageSystem ThreePAR-2 $StoragePools | Wait-HPOVTaskComplete
 
-    Write-Output "Adding Storage Volume Templates" | Timestamp
-    New-HPOVStorageVolumeTemplate -capacity 100 -Name SVT-Demo-Shared -StoragePool CPG-SSD -Shared -SnapshotStoragePool CPG-SSD -StorageSystem ThreePAR7200-6710
-    Write-Output "Adding Storage Volumes" | Timestamp
-    New-HPOVStorageVolume -Capacity 200 -Name Demo-Volume-1 -StoragePool FST_CPG1 -SnapshotStoragePool FST_CPG1 -StorageSystem ThreePAR7200-6710 | Wait-HPOVTaskComplete
-    New-HPOVStorageVolume -Capacity 200 -Name Shared-Volume-1 -StoragePool FST_CPG1 -SnapshotStoragePool FST_CPG1 -Shared -StorageSystem ThreePAR7200-6955 | Wait-HPOVTaskComplete
-    New-HPOVStorageVolume -Capacity 200 -Name Shared-Volume-2 -StoragePool FST_CPG1 -SnapshotStoragePool FST_CPG1 -Shared -StorageSystem ThreePAR7200-6955 | Wait-HPOVTaskComplete
+    Write-Output "Adding 3PAR Storage Volume Templates" | Timestamp
+    New-HPOVStorageVolumeTemplate -Capacity 100 -Name SVT-3PAR-Shared-1 -ProvisionType Thin -StoragePool CPG-SSD -Shared -SnapshotStoragePool CPG-SSD -StorageSystem ThreePAR-1
+    New-HPOVStorageVolumeTemplate -Capacity 100 -Name SVT-3PAR-Shared-2 -ProvisionType Thin -StoragePool CPG-SSD -Shared -SnapshotStoragePool CPG-SSD -StorageSystem ThreePAR-2
+    
+    Write-Output "Adding 3PAR Storage Volumes" | Timestamp
+    New-HPOVStorageVolume -Capacity 200 -Name Demo-Volume-1 -StoragePool FST_CPG1 -SnapshotStoragePool FST_CPG1 -StorageSystem ThreePAR-1 | Wait-HPOVTaskComplete
+    New-HPOVStorageVolume -Capacity 200 -Name Shared-Volume-1 -StoragePool FST_CPG1 -SnapshotStoragePool FST_CPG1 -Shared -StorageSystem ThreePAR-2 | Wait-HPOVTaskComplete
+    New-HPOVStorageVolume -Capacity 200 -Name Shared-Volume-2 -StoragePool FST_CPG1 -SnapshotStoragePool FST_CPG1 -Shared -StorageSystem ThreePAR-2 | Wait-HPOVTaskComplete
+
+    Write-Output "Adding StoreVirtual Storage Systems" | Timestamp
+    $SVNet1 = Get-HPOVNetwork -Name SVCluster-1 -ErrorAction Stop
+    Add-HPOVStorageSystem -Hostname 172.18.30.1 -Family StoreVirtual -Password dcs -Username dcs -VIPS @{ "172.18.30.1" = $SVNet1 } | Wait-HPOVTaskComplete
+    $SVNet2 = Get-HPOVNetwork -Name SVCluster-2 -ErrorAction Stop
+    Add-HPOVStorageSystem -Hostname 172.18.30.2 -Family StoreVirtual -Password dcs -Username dcs -VIPS @{ "172.18.30.2" = $SVNet2 } | Wait-HPOVTaskComplete
+    $SVNet3 = Get-HPOVNetwork -Name SVCluster-3 -ErrorAction Stop
+    Add-HPOVStorageSystem -Hostname 172.18.30.3 -Family StoreVirtual -Password dcs -Username dcs -VIPS @{ "172.18.30.3" = $SVNet3 } | Wait-HPOVTaskComplete
+
+    Write-Output "Adding StoreVirtual Storage Volume Templates" | Timestamp
+    New-HPOVStorageVolumeTemplate -Capacity 100 -Name SVT-StoreVirt-1 -ProvisionType Thin -StoragePool Cluster-1 -Shared -StorageSystem Cluster-1
+    New-HPOVStorageVolumeTemplate -Capacity 100 -Name SVT-StoreVirt-2 -ProvisionType Thin -StoragePool Cluster-2 -Shared -StorageSystem Cluster-2
+    New-HPOVStorageVolumeTemplate -Capacity 100 -Name SVT-StoreVirt-3 -ProvisionType Thin -StoragePool Cluster-3 -Shared -StorageSystem Cluster-3
 
     Write-Output "Storage Configuration Complete" | Timestamp
 }
@@ -246,10 +264,11 @@ function Create_Server_Profile_Template_SY480_RHEL_Local_Storage
     
     $SY480Gen9SHT      = Get-HPOVServerHardwareTypes -name "SY 480 Gen9 1" -ErrorAction Stop
     $EnclGroup         = Get-HPOVEnclosureGroup -Name "EG-Synergy-Local" -ErrorAction Stop
-    #$FWBaseline        = Get-HPOVBaseline -SppName "Service Pack for ProLiant" -Version "2017.04.0" -ErrorAction Stop
     $FWBaseline        = Get-HPOVBaseline
     $Eth1              = Get-HPOVNetwork -Name "Prod_1101" | New-HPOVServerProfileConnection -ConnectionID 1 -Name 'Prod-1101' -PortId "Mezz 3:1-c" -ErrorAction Stop
     $Eth2              = Get-HPOVNetwork -Name "Prod_1102" | New-HPOVServerProfileConnection -ConnectionID 2 -Name 'Prod-1102' -PortId "Mezz 3:2-c" -ErrorAction Stop
+    $Deploy1           = Get-HPOVNetwork -Name "Deployment" | New-HPOVServerProfileConnection -ConnectionID 3 -Name 'Deployment Network A' -PortId "Mezz 3:1-a" -Bootable -Priority Primary -ErrorAction Stop
+    $Deploy2           = Get-HPOVNetwork -Name "Deployment" | New-HPOVServerProfileConnection -ConnectionID 4 -Name 'Deployment Network B' -PortId "Mezz 3:2-a" -Bootable -Priority Secondary -ErrorAction Stop
     $LogicalDisk       = New-HPOVServerProfileLogicalDisk -Name "SAS RAID1 SSD" -RAID RAID1 -NumberofDrives 2 -DriveType SASSSD -ErrorAction Stop
     $StorageController = New-HPOVServerProfileLogicalDiskController -ControllerID Embedded -Mode RAID -Initialize -LogicalDisk $LogicalDisk -ErrorAction Stop
     
@@ -258,7 +277,7 @@ function Create_Server_Profile_Template_SY480_RHEL_Local_Storage
         Baseline                 = $FWBaseline;
         BootMode                 = "UEFI";
         BootOrder                = "HardDisk";
-        Connections              = $Eth1, $Eth2;
+        Connections              = $Eth1, $Eth2, $Deploy1, $Deploy2;
         Description              = "Server Profile Template for HPE Synergy 480 Gen9 Compute Module with Local Storage";
         EnclosureGroup           = $EnclGroup;
         Firmware                 = $False;
@@ -287,19 +306,21 @@ function Create_Server_Profile_SY480_RHEL_Local_Storage
     
     $SY480Gen9SHT   = Get-HPOVServerHardwareTypes -name "SY 480 Gen9 1" -ErrorAction Stop
     $Template       = Get-HPOVServerProfileTemplate -Name "HPE Synergy 480 Gen9 RHEL with Local Storage Template" -ErrorAction Stop
-    $DeploymentPlan = Get-HPOVOSDeploymentPlan -Name "Deployment Plan" -ErrorAction Stop
+    $DeploymentPlan = Get-HPOVOSDeploymentPlan -Name "Basic Deployment Plan" -ErrorAction Stop
     $Server         = Get-HPOVServer -ServerHardwareType $SY480Gen9SHT -NoProfile -ErrorAction Stop | Select-Object -First 1 
     
     $params = @{
         AssignmentType        = "Bay";
         Description           = "HPE Synergy 480 Gen9 Server";
         Name                  = "SP - SY480-RHEL-Local-Storage";
-        #OSDeploymentPlan      = $DeploymentPlan;
+        OSDeploymentPlan      = $DeploymentPlan;
         Server                = $Server;
         ServerProfileTemplate = $Template
     }
 
     New-HPOVServerProfile @params | Wait-HPOVTaskComplete
+    Get-HPOVServerProfile | Update-HPOVServerProfile -Confirm:$false
+
     Write-Output "SY480 Local Storage Server Profile Created" | Timestamp
 }
 
@@ -310,7 +331,6 @@ function Create_Server_Profile_Template_SY660_Windows_SAN_Storage
 
     $SY660Gen9SHT      = Get-HPOVServerHardwareTypes -name "SY 660 Gen9 1" -ErrorAction Stop
     $EnclGroup         = Get-HPOVEnclosureGroup -Name "EG-Synergy-Local" -ErrorAction Stop
-    #$FWBaseline        = Get-HPOVBaseline -SppName "Service Pack for ProLiant" -Version "2017.04.0" -ErrorAction Stop
     $FWBaseline        = Get-HPOVBaseline
     $Eth1              = Get-HPOVNetwork -Name "Prod_1101" | New-HPOVServerProfileConnection -ConnectionID 1 -Name 'Prod-1101' -PortId "Mezz 3:1-c" -ErrorAction Stop
     $Eth2              = Get-HPOVNetwork -Name "Prod_1102" | New-HPOVServerProfileConnection -ConnectionID 2 -Name 'Prod-1102' -PortId "Mezz 3:2-c" -ErrorAction Stop
@@ -352,19 +372,19 @@ function Create_Server_Profile_SY660_Windows_SAN_Storage
 
     $SY660Gen9SHT   = Get-HPOVServerHardwareTypes -name "SY 660 Gen9 1" -ErrorAction Stop
     $Template       = Get-HPOVServerProfileTemplate -Name "HPE Synergy 660 Gen9 Windows with SAN Storage Template" -ErrorAction Stop
-    $DeploymentPlan = Get-HPOVOSDeploymentPlan -Name "Deployment Plan" -ErrorAction Stop
     $Server         = Get-HPOVServer -ServerHardwareType $SY660Gen9SHT -NoProfile -ErrorAction Stop | Select-Object -First 1
         
     $params = @{
         AssignmentType        = "Bay";
         Description           = "HPE Synergy 660 Gen9 Server";
         Name                  = "SP - SY660-Windows-SAN-Storage";
-        #OSDeploymentPlan      = $DeploymentPlan;
         Server                = $Server;
         ServerProfileTemplate = $Template
     }
 
     New-HPOVServerProfile @params | Wait-HPOVTaskComplete
+    Get-HPOVServerProfile | Update-HPOVServerProfile -Confirm:$false
+
     Write-Output "SY660 SAN Storage Server Profile Created" | Timestamp
 }
 
@@ -375,12 +395,13 @@ function Create_Server_Profile_Template_SY480_ESX_SAN_Storage
 
     $SY660Gen9SHT      = Get-HPOVServerHardwareTypes -name "SY 480 Gen9 2" -ErrorAction Stop
     $EnclGroup         = Get-HPOVEnclosureGroup -Name "EG-Synergy-Local" -ErrorAction Stop
-    #$FWBaseline        = Get-HPOVBaseline -SppName "Service Pack for ProLiant" -Version "2017.04.0" -ErrorAction Stop
-    $FWBaseline        = Get-HPOVBaseline
+    $FWBaseline        = Get-HPOVBaseline -SppName "Service Pack for ProLiant" -Version "2017.07.1" -ErrorAction Stop
     $Eth1              = Get-HPOVNetwork -Name "Prod_1101" | New-HPOVServerProfileConnection -ConnectionID 1 -Name 'Prod-1101' -PortId "Mezz 3:1-c" -ErrorAction Stop
     $Eth2              = Get-HPOVNetwork -Name "Prod_1102" | New-HPOVServerProfileConnection -ConnectionID 2 -Name 'Prod-1102' -PortId "Mezz 3:2-c" -ErrorAction Stop
     $FC1               = Get-HPOVNetwork -Name 'SAN A FC' | New-HPOVServerProfileConnection -connectionId 3 -ErrorAction Stop
     $FC2               = Get-HPOVNetwork -Name 'SAN B FC' | New-HPOVServerProfileConnection -connectionId 4 -ErrorAction Stop
+    $Deploy1           = Get-HPOVNetwork -Name "Deployment" | New-HPOVServerProfileConnection -ConnectionID 5 -Name 'Deployment Network A' -PortId "Mezz 3:1-a" -Bootable -Priority Primary -ErrorAction Stop
+    $Deploy2           = Get-HPOVNetwork -Name "Deployment" | New-HPOVServerProfileConnection -ConnectionID 6 -Name 'Deployment Network B' -PortId "Mezz 3:2-a" -Bootable -Priority Secondary -ErrorAction Stop
     $LogicalDisk       = New-HPOVServerProfileLogicalDisk -Name "SAS RAID5 SSD" -RAID RAID5 -NumberofDrives 3 -DriveType SASSSD -ErrorAction Stop
     $SANVol            = Get-HPOVStorageVolume -Name "Shared-Volume-1" | New-HPOVProfileAttachVolume -LunIdType Manual -LunID 0 -ErrorAction Stop
     $StorageController = New-HPOVServerProfileLogicalDiskController -ControllerID Embedded -Mode RAID -Initialize -LogicalDisk $LogicalDisk -ErrorAction Stop
@@ -390,7 +411,7 @@ function Create_Server_Profile_Template_SY480_ESX_SAN_Storage
         Baseline                 = $FWBaseline;
         BootMode                 = "UEFI";
         BootOrder                = "HardDisk";
-        Connections              = $Eth1, $Eth2, $FC1, $FC2;
+        Connections              = $Eth1, $Eth2, $FC1, $FC2, $Deploy1, $Deploy2;
         Description              = "Server Profile Template for HPE Synergy 480 Gen9 Compute Module with Local and SAN Storage";
         EnclosureGroup           = $EnclGroup;
         Firmware                 = $False;
@@ -417,19 +438,21 @@ function Create_Server_Profile_SY480_ESX_SAN_Storage
 
     $SY480Gen9SHT   = Get-HPOVServerHardwareTypes -name "SY 480 Gen9 2" -ErrorAction Stop
     $Template       = Get-HPOVServerProfileTemplate -Name "HPE Synergy 480 Gen9 ESX with SAN Storage Template" -ErrorAction Stop
-    $DeploymentPlan = Get-HPOVOSDeploymentPlan -Name "Deployment Plan" -ErrorAction Stop
+    $DeploymentPlan = Get-HPOVOSDeploymentPlan -Name "HPE-Esxi-6.2-U2 Deployment Test" -ErrorAction Stop
     $Server         = Get-HPOVServer -ServerHardwareType $SY480Gen9SHT -NoProfile -ErrorAction Stop | Select-Object -First 1
         
     $params = @{
         AssignmentType        = "Bay";
         Description           = "HPE Synergy 480 Gen9 Server";
         Name                  = "SP - SY480-ESX-SAN-Storage";
-        #OSDeploymentPlan      = $DeploymentPlan;
+        OSDeploymentPlan      = $DeploymentPlan;
         Server                = $Server;
         ServerProfileTemplate = $Template
     }
 
     New-HPOVServerProfile @params | Wait-HPOVTaskComplete
+    Get-HPOVServerProfile | Update-HPOVServerProfile -Confirm:$false
+
     Write-Output "SY480 SAN Storage Server Profile Created" | Timestamp
 }
 
