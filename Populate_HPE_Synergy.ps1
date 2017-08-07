@@ -199,9 +199,21 @@ function Create_Enclosure_Group
 }
 
 
+function Create_Enclosure_Group_Remote
+{
+    #$AddressPool = Get-HPOVAddressPoolSubnet -NetworkId $deploy_subnet -ErrorAction Stop | Get-HPOVAddressPoolRange
+    $2FrameVCLIG_A = Get-HPOVLogicalInterconnectGroup -Name LIG-FlexFabric-Remote-A
+    $2FrameVCLIG_B = Get-HPOVLogicalInterconnectGroup -Name LIG-FlexFabric-Remote-B
+    $FcLIG = Get-HPOVLogicalInterconnectGroup -Name LIG-FC-Remote
+    New-HPOVEnclosureGroup -name "EG-Synergy-Remote" -LogicalInterconnectGroupMapping @{Frame1 = $FcLIG,$2FrameVCLIG_A,$2FrameVCLIG_B; Frame2 = $FcLIG,$2FrameVCLIG_A,$2FrameVCLIG_B} -EnclosureCount 2
+
+    Write-Output "Enclosure Group Created" | Timestamp
+}
+
+
 function Create_Logical_Enclosure
 {
-    Write-Output "Creating Logical Enclosure" | Timestamp
+    Write-Output "Creating Local Logical Enclosure" | Timestamp
     $EG = Get-HPOVEnclosureGroup -Name EG-Synergy-Local
     $Encl = Get-HPOVEnclosure -Name Synergy-Encl-1
     New-HPOVLogicalEnclosure -EnclosureGroup $EG -Name LE-Synergy-Local -Enclosure $Encl | Wait-HPOVTaskComplete
@@ -209,12 +221,32 @@ function Create_Logical_Enclosure
 }
 
 
+function Create_Logical_Enclosure_Remote
+{
+    Write-Output "Creating Remote Logical Enclosure" | Timestamp
+    $EG = Get-HPOVEnclosureGroup -Name EG-Synergy-Remote
+    $Encl = Get-HPOVEnclosure -Name Synergy-Encl-4
+    New-HPOVLogicalEnclosure -EnclosureGroup $EG -Name LE-Synergy-Remote -Enclosure $Encl | Wait-HPOVTaskComplete
+    Write-Output "Logical Enclosure Created" | Timestamp
+}
+
+
 function Create_Logical_Interconnect_Groups
 {
-    Write-Output "Creating Logical Interconnect Groups" | Timestamp
+    Write-Output "Creating Local Logical Interconnect Groups" | Timestamp
     New-HPOVLogicalInterconnectGroup -Name "LIG-SAS" -FrameCount 1 -InterconnectBaySet 1 -FabricModuleType "SAS" -Bays @{Frame1 = @{Bay1 = "SE12SAS" ; Bay4 = "SE12SAS"}}
     New-HPOVLogicalInterconnectGroup -Name "LIG-FC" -FrameCount 1 -InterconnectBaySet 2 -FabricModuleType "SEVCFC" -Bays @{Frame1 = @{Bay2 = "SEVC16GbFC" ; Bay5 = "SEVC16GbFC"}}
     New-HPOVLogicalInterconnectGroup -Name "LIG-FlexFabric" -FrameCount 3 -InterconnectBaySet 3 -FabricModuleType "SEVC40F8" -Bays @{Frame1 = @{Bay3 = "SEVC40f8" ; Bay6 = "SE20ILM"};Frame2 = @{Bay3 = "SE20ILM"; Bay6 = "SEVC40f8" };Frame3 = @{Bay3 = "SE20ILM"; Bay6 = "SE20ILM"}} -FabricRedundancy "HighlyAvailable"
+    Write-Output "Logical Interconnect Groups Created" | Timestamp
+}
+
+
+function Create_Logical_Interconnect_Groups_Remote
+{
+    Write-Output "Creating Remote Logical Interconnect Groups" | Timestamp
+    New-HPOVLogicalInterconnectGroup -Name "LIG-FC-Remote" -FrameCount 1 -InterconnectBaySet 1 -FabricModuleType "SEVCFC" -Bays @{Frame1 = @{Bay1 = "SEVC16GbFC" ; Bay4 = "SEVC16GbFC"}}
+    New-HPOVLogicalInterconnectGroup -Name "LIG-FlexFabric-Remote-A" -FrameCount 2 -InterconnectBaySet 2 -FabricModuleType "SEVC40F8" -Bays @{Frame1 = @{Bay2 = "SEVC40f8" ; Bay5 = "SE20ILM"};Frame2 = @{Bay2 = "SE20ILM"; Bay5 = "SEVC40F8" }} -FabricRedundancy "HighlyAvailable"
+    New-HPOVLogicalInterconnectGroup -Name "LIG-FlexFabric-Remote-B" -FrameCount 2 -InterconnectBaySet 3 -FabricModuleType "SEVC40F8" -Bays @{Frame1 = @{Bay3 = "SEVC40f8" ; Bay6 = "SE20ILM"};Frame2 = @{Bay3 = "SE20ILM"; Bay6 = "SEVC40F8" }} -FabricRedundancy "HighlyAvailable"
     Write-Output "Logical Interconnect Groups Created" | Timestamp
 }
 
@@ -507,6 +539,13 @@ function Add_Scopes
 #
 ##############################################################################
 
+#
+# Unload any earlier versions of the HPOneView POSH modules
+#
+Remove-Module -ErrorAction SilentlyContinue HPOneView.120
+Remove-Module -ErrorAction SilentlyContinue HPOneView.200
+Remove-Module -ErrorAction SilentlyContinue HPOneView.300
+
 if (-not (get-module HPOneview.310)) 
 {
     Import-Module HPOneView.310
@@ -574,5 +613,12 @@ Create_Server_Profile_Template_SY480_ESX_SAN_Storage
 Create_Server_Profile_SY480_RHEL_Local_Storage
 Create_Server_Profile_SY660_Windows_SAN_Storage
 Create_Server_Profile_SY480_ESX_SAN_Storage
+
+#
+# Add Second Enclosure Group for Remote Enclosures
+#
+Create_Logical_Interconnect_Groups_Remote
+Create_Enclosure_Group_Remote
+Create_Logical_Enclosure_Remote
 
 Write-Output "HPE Synergy Appliance Configuration Complete" | Timestamp
