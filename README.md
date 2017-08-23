@@ -10,7 +10,7 @@ The HPE Synergy Data Center Simulator (DCS) is a useful tool for learning about 
 The Populate HPE Synergy scripts work with the Data Center Simulator to instantiate all of the simulated hardware and components availble in the appliance, making it a much more feature-rich environment to demonstrate and learn how to use features such as Server Profile Templates, Server Profiles, etc.
 
 # How to use the scripts
-This package contains two primary scripts and one configuration file. These are PowerShell scripts and they require the HPE OneView PowerShell library found here: https://github.com/HewlettPackard/POSH-HPOneView.
+This package contains two primary scripts and one configuration file. These are PowerShell scripts and they require the HPE OneView PowerShell library found here: https://github.com/HewlettPackard/POSH-HPOneView. It is strongly recommended to use the latest version of the PowerShell library to take advantage of the latest features, new OneView/Synergy capabilities, and defect fixes.
 
 ## Populate_HPE_Synergy.ps1
 This script connects with the Synergy DCS appliance and discovers/configures all the simulated hardware.  When the script is run, it prompts for the hostname or IP address of the Synergy appliance, the Administrator user name (usually Administrator), and the Administrator password.
@@ -34,6 +34,7 @@ This script does the following:
 * Creates multiple sample Server Profile Templates
 * Creates multiple sample Server Profiles
 * Adds various Scopes
+* Configures remote resources including: LE, LI, LIGs, Enclosure Group
 
 ## Cleanup_HPE_Synergy.ps1
 This script connects with the Synergy DCS appliance and de-configures all the simulated hardware.  It effectively backs-out all the changes made to the DCS appliance by the Populate_HPE_Synergy script. When the script is run, it prompts for the hostname or IP address of the Synergy appliance, the Administrator user name (usually Administrator), and the Administrator password.
