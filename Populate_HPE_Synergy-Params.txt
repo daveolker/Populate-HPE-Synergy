@@ -6,10 +6,10 @@
 # but may need adjustments when using other Hypervisors.
 #
 ##########################################################################
-prod_subnet=192.168.56.0
-prod_gateway=192.168.56.1
-prod_pool_start=192.168.56.200
-prod_pool_end=192.168.56.254
+prod_subnet=192.168.210.0
+prod_gateway=192.168.210.1
+prod_pool_start=192.168.210.200
+prod_pool_end=192.168.210.254
 prod_mask=255.255.255.0
 deploy_subnet=10.1.1.0
 deploy_gateway=10.1.1.1

@@ -36,6 +36,20 @@ function Add_Remote_Enclosures
     Write-Output "Adding Remote Enclosures" | Timestamp
     Send-HPOVRequest -uri "/rest/enclosures" -method POST -body @{'hostname' = 'fe80::2:0:9:7%eth2'} | Wait-HPOVTaskComplete
     Write-Output "Remote Enclosures Added" | Timestamp
+    #
+    # Sleep for 10 seconds to allow remote enclosures to quiesce
+    #
+    Start-Sleep 10
+}
+
+
+function Configure_Address_Pools
+{
+    Write-Output "Configuring Address Pools for MAC, WWN, and Serial Numbers" | Timestamp
+    New-HPOVAddressPoolRange -PoolType vmac -RangeType Generated
+    New-HPOVAddressPoolRange -PoolType vwwn -RangeType Generated
+    New-HPOVAddressPoolRange -PoolType vsn -RangeType Generated
+    Write-Output "Address Pool Ranges Configuration Complete" | Timestamp
 }
 
 
@@ -353,7 +367,7 @@ function Create_Server_Profile_SY480_RHEL_Local_Storage
     }
 
     New-HPOVServerProfile @params | Wait-HPOVTaskComplete
-    Get-HPOVServerProfile | Update-HPOVServerProfile -Confirm:$false
+    # Get-HPOVServerProfile | Update-HPOVServerProfile -Confirm:$false
 
     Write-Output "SY480 Local Storage Server Profile Created" | Timestamp
 }
@@ -417,7 +431,7 @@ function Create_Server_Profile_SY660_Windows_SAN_Storage
     }
 
     New-HPOVServerProfile @params | Wait-HPOVTaskComplete
-    Get-HPOVServerProfile | Update-HPOVServerProfile -Confirm:$false
+    # Get-HPOVServerProfile | Update-HPOVServerProfile -Confirm:$false
 
     Write-Output "SY660 SAN Storage Server Profile Created" | Timestamp
 }
@@ -432,21 +446,17 @@ function Create_Server_Profile_Template_SY480_ESX_SAN_Storage
     #$FWBaseline        = Get-HPOVBaseline -SppName "Service Pack for ProLiant" -Version "2017.07.1" -ErrorAction Stop
     $Eth1              = Get-HPOVNetwork -Name "Prod_1101" | New-HPOVServerProfileConnection -ConnectionID 1 -Name 'Prod-1101' -PortId "Mezz 3:1-c" -ErrorAction Stop
     $Eth2              = Get-HPOVNetwork -Name "Prod_1102" | New-HPOVServerProfileConnection -ConnectionID 2 -Name 'Prod-1102' -PortId "Mezz 3:2-c" -ErrorAction Stop
-    $FC1               = Get-HPOVNetwork -Name 'SAN A FC' | New-HPOVServerProfileConnection -ConnectionID 3 -Bootable -Priority Primary -BootVolumeSource ManagedVolume -ErrorAction Stop
-    $FC2               = Get-HPOVNetwork -Name 'SAN B FC' | New-HPOVServerProfileConnection -ConnectionID 4 -Bootable -Priority Secondary -BootVolumeSource ManagedVolume -ErrorAction Stop
+    $FC1               = Get-HPOVNetwork -Name 'SAN A FC' | New-HPOVServerProfileConnection -ConnectionID 3 -Bootable -Priority Primary -BootVolumeSource ManagedVolume -ConnectionType FibreChannel -ErrorAction Stop
+    $FC2               = Get-HPOVNetwork -Name 'SAN B FC' | New-HPOVServerProfileConnection -ConnectionID 4 -Bootable -Priority Secondary -BootVolumeSource ManagedVolume -ConnectionType FibreChannel -ErrorAction Stop
     #$Deploy1           = Get-HPOVNetwork -Name "Deployment" | New-HPOVServerProfileConnection -ConnectionID 5 -Name 'Deployment Network A' -PortId "Mezz 3:1-a" -Bootable -Priority Primary -ErrorAction Stop
     #$Deploy2           = Get-HPOVNetwork -Name "Deployment" | New-HPOVServerProfileConnection -ConnectionID 6 -Name 'Deployment Network B' -PortId "Mezz 3:2-a" -Bootable -Priority Secondary -ErrorAction Stop
-    #$LogicalDisk       = New-HPOVServerProfileLogicalDisk -Name "SAS RAID5 SSD" -RAID RAID5 -NumberofDrives 3 -DriveType SASSSD -ErrorAction Stop
-    $SANVol            = New-HPOVStorageVolume -Name "ESX-Boot-Vol" -StoragePool FST_CPG1 -StorageSystem ThreePAR-1 -Capacity 60 -ErrorAction SilentlyContinue
-    #$AttachVol         = Get-HPOVStorageVolume -Name "ESX-Boot-Vol" | New-HPOVProfileAttachVolume -HostOStype VMware -LunIdType Manual -LunID 0 -ErrorAction Stop
-    $AttachVol         = Get-HPOVStorageVolume -Name "ESX-Boot-Vol" | New-HPOVProfileAttachVolume -VolumeID 1 -BootVolume -ErrorAction Stop
-    #$AttachVol         = New-HPOVProfileAttachVolume -VolumeID 1 -HostOStype VMware -Volume "ESX-Boot-Vol" -ErrorAction Stop
-    #$SANVol            = New-HPOVStorageVolume -Name "ESX-Boot-Vol" -StoragePool FST_CPG1 -StorageSystem ThreePAR-1 -Size 60 | New-HPOVProfileAttachVolume -LunIdType Manual -LunID 0 -ErrorAction Stop
-    #$StorageController = New-HPOVServerProfileLogicalDiskController -ControllerID Embedded -Mode RAID -Initialize -LogicalDisk $LogicalDisk -ErrorAction Stop
+    $LogicalDisk       = New-HPOVServerProfileLogicalDisk -Name "SAS RAID5 SSD" -RAID RAID5 -NumberofDrives 3 -DriveType SASSSD -ErrorAction Stop
+    $SANVol            = New-HPOVServerProfileAttachVolume -Name BootVol -StoragePool FST_CPG1 -BootVolume -Capacity 100 -LunIdType Auto -Permanent -StorageSystem ThreePAR-1
+    $StorageController = New-HPOVServerProfileLogicalDiskController -ControllerID Embedded -Mode RAID -Initialize -LogicalDisk $LogicalDisk -ErrorAction Stop
 
     $params = @{
         Affinity                 = "Bay";
-        Baseline                 = $FWBaseline;
+    #    Baseline                 = $FWBaseline;
         BootMode                 = "UEFI";
         BootOrder                = "HardDisk";
     #    Connections              = $Eth1, $Eth2, $FC1, $FC2, $Deploy1, $Deploy2;
@@ -456,16 +466,15 @@ function Create_Server_Profile_Template_SY480_ESX_SAN_Storage
         Firmware                 = $False;
         FirmwareMode             = "FirmwareOffline";
         HideUnusedFlexNics       = $True;
-     #   LocalStorage             = $True;
+        LocalStorage             = $True;
         HostOStype               = "VMware";
         ManageBoot               = $True;
         Name                     = "HPE Synergy 480 Gen9 ESX with SAN Storage Template";
         SANStorage               = $True;
         ServerHardwareType       = $SY480Gen9SHT;
         ServerProfileDescription = "Server Profile for HPE Synergy 480 Gen9 Compute Module with SAN Storage";
-      #  StorageController        = $StorageController;
-        #StorageVolume            = $SANVol
-        StorageVolume            = $AttachVol
+        StorageController        = $StorageController;
+        StorageVolume            = $SANVol
     }
 
     New-HPOVServerProfileTemplate @params | Wait-HPOVTaskComplete
@@ -478,20 +487,20 @@ function Create_Server_Profile_SY480_ESX_SAN_Storage
 
     $SY480Gen9SHT   = Get-HPOVServerHardwareTypes -name "SY 480 Gen9 2" -ErrorAction Stop
     $Template       = Get-HPOVServerProfileTemplate -Name "HPE Synergy 480 Gen9 ESX with SAN Storage Template" -ErrorAction Stop
-    $DeploymentPlan = Get-HPOVOSDeploymentPlan -Name "HPE-Esxi-6.2-U2 Deployment Test" -ErrorAction Stop
+    #$DeploymentPlan = Get-HPOVOSDeploymentPlan -Name "HPE-Esxi-6.2-U2 Deployment Test" -ErrorAction Stop
     $Server         = Get-HPOVServer -ServerHardwareType $SY480Gen9SHT -NoProfile -ErrorAction Stop | Select-Object -First 1
         
     $params = @{
         AssignmentType        = "Bay";
         Description           = "HPE Synergy 480 Gen9 Server";
         Name                  = "SP - SY480-ESX-SAN-Storage";
-        OSDeploymentPlan      = $DeploymentPlan;
+    #    OSDeploymentPlan      = $DeploymentPlan;
         Server                = $Server;
         ServerProfileTemplate = $Template
     }
 
     New-HPOVServerProfile @params | Wait-HPOVTaskComplete
-    Get-HPOVServerProfile | Update-HPOVServerProfile -Confirm:$false
+    # Get-HPOVServerProfile | Update-HPOVServerProfile -Confirm:$false
 
     Write-Output "SY480 SAN Storage Server Profile Created" | Timestamp
 }
@@ -602,6 +611,7 @@ Write-Output "Configuring HPE Synergy Appliance" | Timestamp
 
 Add_Firmware_Bundle
 Add_Licenses
+Configure_Address_Pools
 Add_Remote_Enclosures
 Rename_Enclosures
 PowerOff_All_Servers
