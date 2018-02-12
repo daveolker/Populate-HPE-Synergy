@@ -205,7 +205,7 @@ function Create_Uplink_Sets
 
 function Create_Enclosure_Group
 {
-    $AddressPool = Get-HPOVAddressPoolSubnet -NetworkId $deploy_subnet -ErrorAction Stop | Get-HPOVAddressPoolRange
+    #$AddressPool = Get-HPOVAddressPoolSubnet -NetworkId $deploy_subnet -ErrorAction Stop | Get-HPOVAddressPoolRange
     $3FrameVCLIG = Get-HPOVLogicalInterconnectGroup -Name LIG-FlexFabric
     $SasLIG = Get-HPOVLogicalInterconnectGroup -Name LIG-SAS
     $FcLIG = Get-HPOVLogicalInterconnectGroup -Name LIG-FC
@@ -313,12 +313,12 @@ function Create_Server_Profile_Template_SY480_RHEL_Local_Storage
     $SY480Gen9SHT      = Get-HPOVServerHardwareTypes -name "SY 480 Gen9 1" -ErrorAction Stop
     $EnclGroup         = Get-HPOVEnclosureGroup -Name "EG-Synergy-Local" -ErrorAction Stop
     $FWBaseline        = Get-HPOVBaseline
-    $Eth1              = Get-HPOVNetwork -Name "Prod_1101" | New-HPOVServerProfileConnection -ConnectionID 1 -Name 'Prod-1101' -PortId "Mezz 3:1-c" -ErrorAction Stop
-    $Eth2              = Get-HPOVNetwork -Name "Prod_1102" | New-HPOVServerProfileConnection -ConnectionID 2 -Name 'Prod-1102' -PortId "Mezz 3:2-c" -ErrorAction Stop
-    $Deploy1           = Get-HPOVNetwork -Name "Deployment" | New-HPOVServerProfileConnection -ConnectionID 3 -Name 'Deployment Network A' -PortId "Mezz 3:1-a" -Bootable -Priority Primary -ErrorAction Stop
-    $Deploy2           = Get-HPOVNetwork -Name "Deployment" | New-HPOVServerProfileConnection -ConnectionID 4 -Name 'Deployment Network B' -PortId "Mezz 3:2-a" -Bootable -Priority Secondary -ErrorAction Stop
-    $LogicalDisk       = New-HPOVServerProfileLogicalDisk -Name "SAS RAID1 SSD" -RAID RAID1 -NumberofDrives 2 -DriveType SASSSD -ErrorAction Stop
-    $StorageController = New-HPOVServerProfileLogicalDiskController -ControllerID Embedded -Mode RAID -Initialize -LogicalDisk $LogicalDisk -ErrorAction Stop
+    $Eth1              = Get-HPOVNetwork -Name "Prod_1101" | New-HPOVServerProfileConnection -ConnectionID 1 -Name 'Prod-1101' -PortId "Mezz 3:1-c"
+    $Eth2              = Get-HPOVNetwork -Name "Prod_1102" | New-HPOVServerProfileConnection -ConnectionID 2 -Name 'Prod-1102' -PortId "Mezz 3:2-c"
+    $Deploy1           = Get-HPOVNetwork -Name "Deployment" | New-HPOVServerProfileConnection -ConnectionID 3 -Name 'Deployment Network A' -PortId "Mezz 3:1-a" -Bootable -Priority Primary
+    $Deploy2           = Get-HPOVNetwork -Name "Deployment" | New-HPOVServerProfileConnection -ConnectionID 4 -Name 'Deployment Network B' -PortId "Mezz 3:2-a" -Bootable -Priority Secondary
+    $LogicalDisk       = New-HPOVServerProfileLogicalDisk -Name "SAS RAID1 SSD" -RAID RAID1 -NumberofDrives 2 -DriveType SASSSD
+    $StorageController = New-HPOVServerProfileLogicalDiskController -ControllerID Embedded -Mode RAID -Initialize -LogicalDisk $LogicalDisk
     
     $params = @{
         Affinity                 = "Bay";
@@ -380,13 +380,13 @@ function Create_Server_Profile_Template_SY660_Windows_SAN_Storage
     $SY660Gen9SHT      = Get-HPOVServerHardwareTypes -name "SY 660 Gen9 1" -ErrorAction Stop
     $EnclGroup         = Get-HPOVEnclosureGroup -Name "EG-Synergy-Local" -ErrorAction Stop
     $FWBaseline        = Get-HPOVBaseline
-    $Eth1              = Get-HPOVNetwork -Name "Prod_1101" | New-HPOVServerProfileConnection -ConnectionID 1 -Name 'Prod-1101' -PortId "Mezz 3:1-c" -ErrorAction Stop
-    $Eth2              = Get-HPOVNetwork -Name "Prod_1102" | New-HPOVServerProfileConnection -ConnectionID 2 -Name 'Prod-1102' -PortId "Mezz 3:2-c" -ErrorAction Stop
-    $FC1               = Get-HPOVNetwork -Name 'SAN A FC' | New-HPOVServerProfileConnection -connectionId 3 -ErrorAction Stop
-    $FC2               = Get-HPOVNetwork -Name 'SAN B FC' | New-HPOVServerProfileConnection -connectionId 4 -ErrorAction Stop
-    $LogicalDisk       = New-HPOVServerProfileLogicalDisk -Name "SAS RAID5 SSD" -RAID RAID5 -NumberofDrives 3 -DriveType SASSSD -ErrorAction Stop
-    $SANVol            = Get-HPOVStorageVolume -Name "Shared-Volume-2" | New-HPOVProfileAttachVolume -LunIdType Manual -LunID 0 -ErrorAction Stop
-    $StorageController = New-HPOVServerProfileLogicalDiskController -ControllerID Embedded -Mode RAID -Initialize -LogicalDisk $LogicalDisk -ErrorAction Stop
+    $Eth1              = Get-HPOVNetwork -Name "Prod_1101" | New-HPOVServerProfileConnection -ConnectionID 1 -Name 'Prod-1101' -PortId "Mezz 3:1-c"
+    $Eth2              = Get-HPOVNetwork -Name "Prod_1102" | New-HPOVServerProfileConnection -ConnectionID 2 -Name 'Prod-1102' -PortId "Mezz 3:2-c"
+    $FC1               = Get-HPOVNetwork -Name 'SAN A FC' | New-HPOVServerProfileConnection -connectionId 3
+    $FC2               = Get-HPOVNetwork -Name 'SAN B FC' | New-HPOVServerProfileConnection -connectionId 4
+    $LogicalDisk       = New-HPOVServerProfileLogicalDisk -Name "SAS RAID5 SSD" -RAID RAID5 -NumberofDrives 3 -DriveType SASSSD
+    $SANVol            = Get-HPOVStorageVolume -Name "Shared-Volume-2" | New-HPOVProfileAttachVolume -LunIdType Manual -LunID 0
+    $StorageController = New-HPOVServerProfileLogicalDiskController -ControllerID Embedded -Mode RAID -Initialize -LogicalDisk $LogicalDisk
 
     $params = @{
         Affinity                 = "Bay";
@@ -410,7 +410,7 @@ function Create_Server_Profile_Template_SY660_Windows_SAN_Storage
         StorageVolume            = $SANVol
     }
 
-    New-HPOVServerProfileTemplate @params | Wait-HPOVTaskComplete
+    New-HPOVServerProfileTemplate @params -Verbose| Wait-HPOVTaskComplete
 }
 
 
@@ -444,15 +444,15 @@ function Create_Server_Profile_Template_SY480_ESX_SAN_Storage
     $SY480Gen9SHT      = Get-HPOVServerHardwareTypes -name "SY 480 Gen9 1" -ErrorAction Stop
     $EnclGroup         = Get-HPOVEnclosureGroup -Name "EG-Synergy-Local" -ErrorAction Stop
     #$FWBaseline        = Get-HPOVBaseline -SppName "Service Pack for ProLiant" -Version "2017.07.1" -ErrorAction Stop
-    $Eth1              = Get-HPOVNetwork -Name "Prod_1101" | New-HPOVServerProfileConnection -ConnectionID 1 -Name 'Prod-1101' -PortId "Mezz 3:1-c" -ErrorAction Stop
-    $Eth2              = Get-HPOVNetwork -Name "Prod_1102" | New-HPOVServerProfileConnection -ConnectionID 2 -Name 'Prod-1102' -PortId "Mezz 3:2-c" -ErrorAction Stop
-    $FC1               = Get-HPOVNetwork -Name 'SAN A FC' | New-HPOVServerProfileConnection -ConnectionID 3 -Bootable -Priority Primary -BootVolumeSource ManagedVolume -ConnectionType FibreChannel -ErrorAction Stop
-    $FC2               = Get-HPOVNetwork -Name 'SAN B FC' | New-HPOVServerProfileConnection -ConnectionID 4 -Bootable -Priority Secondary -BootVolumeSource ManagedVolume -ConnectionType FibreChannel -ErrorAction Stop
+    $Eth1              = Get-HPOVNetwork -Name "Prod_1101" | New-HPOVServerProfileConnection -ConnectionID 1 -Name 'Prod-1101' -PortId "Mezz 3:1-c"
+    $Eth2              = Get-HPOVNetwork -Name "Prod_1102" | New-HPOVServerProfileConnection -ConnectionID 2 -Name 'Prod-1102' -PortId "Mezz 3:2-c"
+    $FC1               = Get-HPOVNetwork -Name 'SAN A FC' | New-HPOVServerProfileConnection -ConnectionID 3 -Bootable -Priority Primary -BootVolumeSource ManagedVolume -ConnectionType FibreChannel
+    $FC2               = Get-HPOVNetwork -Name 'SAN B FC' | New-HPOVServerProfileConnection -ConnectionID 4 -Bootable -Priority Secondary -BootVolumeSource ManagedVolume -ConnectionType FibreChannel
     #$Deploy1           = Get-HPOVNetwork -Name "Deployment" | New-HPOVServerProfileConnection -ConnectionID 5 -Name 'Deployment Network A' -PortId "Mezz 3:1-a" -Bootable -Priority Primary -ErrorAction Stop
     #$Deploy2           = Get-HPOVNetwork -Name "Deployment" | New-HPOVServerProfileConnection -ConnectionID 6 -Name 'Deployment Network B' -PortId "Mezz 3:2-a" -Bootable -Priority Secondary -ErrorAction Stop
-    $LogicalDisk       = New-HPOVServerProfileLogicalDisk -Name "SAS RAID5 SSD" -RAID RAID5 -NumberofDrives 3 -DriveType SASSSD -ErrorAction Stop
+    $LogicalDisk       = New-HPOVServerProfileLogicalDisk -Name "SAS RAID5 SSD" -RAID RAID5 -NumberofDrives 3 -DriveType SASSSD
     $SANVol            = New-HPOVServerProfileAttachVolume -Name BootVol -StoragePool FST_CPG1 -BootVolume -Capacity 100 -LunIdType Auto -Permanent -StorageSystem ThreePAR-1
-    $StorageController = New-HPOVServerProfileLogicalDiskController -ControllerID Embedded -Mode RAID -Initialize -LogicalDisk $LogicalDisk -ErrorAction Stop
+    $StorageController = New-HPOVServerProfileLogicalDiskController -ControllerID Embedded -Mode RAID -Initialize -LogicalDisk $LogicalDisk
 
     $params = @{
         Affinity                 = "Bay";
@@ -562,10 +562,11 @@ function Add_Scopes
 Remove-Module -ErrorAction SilentlyContinue HPOneView.120
 Remove-Module -ErrorAction SilentlyContinue HPOneView.200
 Remove-Module -ErrorAction SilentlyContinue HPOneView.300
+Remove-Module -ErrorAction SilentlyContinue HPOneView.310
 
-if (-not (get-module HPOneview.310)) 
+if (-not (get-module HPOneview.400)) 
 {
-    Import-Module HPOneView.310
+    Import-Module HPOneView.400
 }
 
 if (-not $ConnectedSessions) 
@@ -574,7 +575,7 @@ if (-not $ConnectedSessions)
 	$Username  = Read-Host 'Username'
 	$Password  = Read-Host 'Password' -AsSecureString
 
-    $ApplianceConnection = Connect-HPOVMgmt -Hostname $Appliance -Username $Username -Password $Password
+    Connect-HPOVMgmt -Hostname $Appliance -Username $Username -Password $Password
 
     if (-not $ConnectedSessions)
     {
