@@ -562,11 +562,10 @@ function Add_Scopes
 Remove-Module -ErrorAction SilentlyContinue HPOneView.120
 Remove-Module -ErrorAction SilentlyContinue HPOneView.200
 Remove-Module -ErrorAction SilentlyContinue HPOneView.300
-Remove-Module -ErrorAction SilentlyContinue HPOneView.310
 
-if (-not (get-module HPOneview.400)) 
+if (-not (get-module HPOneview.310)) 
 {
-    Import-Module HPOneView.400
+    Import-Module HPOneView.310
 }
 
 if (-not $ConnectedSessions) 
