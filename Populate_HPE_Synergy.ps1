@@ -6,9 +6,9 @@
 #   VERSION 4.00
 #
 #   AUTHORS
-#   Dave Olker - HPE Global Solutions Engineering (BEST)
+#   Dave Olker - HPE Global Solutions Engineering
 #
-# (C) Copyright 2017 Hewlett Packard Enterprise Development LP 
+# (C) Copyright 2018 Hewlett Packard Enterprise Development LP 
 ##############################################################################
 <#
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -216,10 +216,10 @@ function Create_Enclosure_Group
 
 function Create_Enclosure_Group_Remote
 {
-    $2FrameVCLIG_A = Get-HPOVLogicalInterconnectGroup -Name LIG-FlexFabric-Remote-1
-    $2FrameVCLIG_B = Get-HPOVLogicalInterconnectGroup -Name LIG-FlexFabric-Remote-2
+    $2FrameVCLIG_1 = Get-HPOVLogicalInterconnectGroup -Name LIG-FlexFabric-Remote-1
+    $2FrameVCLIG_2 = Get-HPOVLogicalInterconnectGroup -Name LIG-FlexFabric-Remote-2
     $FcLIG = Get-HPOVLogicalInterconnectGroup -Name LIG-FC-Remote
-    New-HPOVEnclosureGroup -name "EG-Synergy-Remote" -LogicalInterconnectGroupMapping @{Frame1 = $FcLIG,$2FrameVCLIG_A,$2FrameVCLIG_B; Frame2 = $FcLIG,$2FrameVCLIG_A,$2FrameVCLIG_B} -EnclosureCount 2
+    New-HPOVEnclosureGroup -name "EG-Synergy-Remote" -LogicalInterconnectGroupMapping @{Frame1 = $FcLIG,$2FrameVCLIG_1,$2FrameVCLIG_2; Frame2 = $FcLIG,$2FrameVCLIG_1,$2FrameVCLIG_2} -EnclosureCount 2
 
     Write-Output "Enclosure Group Created" | Timestamp
 }
