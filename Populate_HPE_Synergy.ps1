@@ -220,7 +220,7 @@ function Create_Enclosure_Group_Remote
     $2FrameVCLIG_2 = Get-HPOVLogicalInterconnectGroup -Name LIG-FlexFabric-Remote-2
     $FcLIG = Get-HPOVLogicalInterconnectGroup -Name LIG-FC-Remote
     New-HPOVEnclosureGroup -name "EG-Synergy-Remote" -LogicalInterconnectGroupMapping @{Frame1 = $FcLIG,$2FrameVCLIG_1,$2FrameVCLIG_2; Frame2 = $FcLIG,$2FrameVCLIG_1,$2FrameVCLIG_2} -EnclosureCount 2
-
+    
     Write-Output "Enclosure Group Created" | Timestamp
 }
 
@@ -290,7 +290,7 @@ function Add_Firmware_Bundle
             Write-Output "Service Pack for ProLiant file '$firmware_bundle' not found.  Skipping firmware upload."
         }
     }
-
+    
     Write-Output "Firmware Bundle Added" | Timestamp
 }
 
@@ -304,27 +304,27 @@ function Create_OS_Deployment_Server
 }
 
 
-function Create_Server_Profile_Template_SY480_RHEL_Local_Storage
+function Create_Server_Profile_Template_SY480_Gen9_RHEL_Local_Boot
 {
-    Write-Output "Creating Local Storage Server Profile Template" | Timestamp
+    Write-Output "Creating SY480 Gen9 with Local Boot for RHEL Server Profile Template" | Timestamp
     
-    $SY480Gen9SHT      = Get-HPOVServerHardwareTypes -name "SY 480 Gen9 1" -ErrorAction Stop
+    $SHT               = Get-HPOVServerHardwareTypes -Name "SY 480 Gen9 1" -ErrorAction Stop
     $EnclGroup         = Get-HPOVEnclosureGroup -Name "EG-Synergy-Local" -ErrorAction Stop
     $FWBaseline        = Get-HPOVBaseline
     $Eth1              = Get-HPOVNetwork -Name "Prod_1101" | New-HPOVServerProfileConnection -ConnectionID 1 -Name 'Prod-1101' -PortId "Mezz 3:1-c"
     $Eth2              = Get-HPOVNetwork -Name "Prod_1102" | New-HPOVServerProfileConnection -ConnectionID 2 -Name 'Prod-1102' -PortId "Mezz 3:2-c"
     $Deploy1           = Get-HPOVNetwork -Name "Deployment" | New-HPOVServerProfileConnection -ConnectionID 3 -Name 'Deployment Network A' -PortId "Mezz 3:1-a" -Bootable -Priority Primary
     $Deploy2           = Get-HPOVNetwork -Name "Deployment" | New-HPOVServerProfileConnection -ConnectionID 4 -Name 'Deployment Network B' -PortId "Mezz 3:2-a" -Bootable -Priority Secondary
-    $LogicalDisk       = New-HPOVServerProfileLogicalDisk -Name "SAS RAID1 SSD" -RAID RAID1 -NumberofDrives 2 -DriveType SASSSD
+    $LogicalDisk       = New-HPOVServerProfileLogicalDisk -Name "SAS RAID1 SSD" -RAID RAID1 -NumberofDrives 2 -DriveType SASSSD -Bootable $True
     $StorageController = New-HPOVServerProfileLogicalDiskController -ControllerID Embedded -Mode RAID -Initialize -LogicalDisk $LogicalDisk
     
     $params = @{
         Affinity                 = "Bay";
         Baseline                 = $FWBaseline;
-        BootMode                 = "UEFI";
+        BootMode                 = "BIOS";
         BootOrder                = "HardDisk";
         Connections              = $Eth1, $Eth2, $Deploy1, $Deploy2;
-        Description              = "Server Profile Template for HPE Synergy 480 Gen9 Compute Module with Local Storage";
+        Description              = "Server Profile Template for HPE Synergy 480 Gen9 Compute Module with Local Boot for RHEL";
         EnclosureGroup           = $EnclGroup;
         Firmware                 = $False;
         FirmwareMode             = "FirmwareOffline";
@@ -332,64 +332,62 @@ function Create_Server_Profile_Template_SY480_RHEL_Local_Storage
         LocalStorage             = $True;
         HostOStype               = "RHEL";
         ManageBoot               = $True;
-        Name                     = "HPE Synergy 480 Gen9 RHEL with Local Storage Template";
+        Name                     = "HPE Synergy 480 Gen9 with Local Boot for RHEL Template";
         SANStorage               = $False;
-        ServerHardwareType       = $SY480Gen9SHT;
-        ServerProfileDescription = "Server Profile for HPE Synergy 480 Gen9 Compute Module with Local Storage";
+        ServerHardwareType       = $SHT;
+        ServerProfileDescription = "Server Profile for HPE Synergy 480 Gen9 Compute Module with Local Boot for RHEL";
         StorageController        = $StorageController;
         StorageVolume            = $LogicalDisk
     }
 
     New-HPOVServerProfileTemplate @params | Wait-HPOVTaskComplete
-    
-    Write-Output "Local Storage Server Profile Template Created" | Timestamp
+    Write-Output "SY480 Gen9 with Local Boot for RHEL Server Profile Template Created" | Timestamp
 }
 
 
-function Create_Server_Profile_SY480_RHEL_Local_Storage
+function Create_Server_Profile_SY480_Gen9_RHEL_Local_Boot
 {
-    Write-Output "Creating Local Storage Server Profile" | Timestamp
+    Write-Output "Creating SY480 Gen9 Local Boot for RHEL Server Profile" | Timestamp
     
-    $SY480Gen9SHT   = Get-HPOVServerHardwareTypes -name "SY 480 Gen9 1" -ErrorAction Stop
-    $Template       = Get-HPOVServerProfileTemplate -Name "HPE Synergy 480 Gen9 RHEL with Local Storage Template" -ErrorAction Stop
-    $Server         = Get-HPOVServer -ServerHardwareType $SY480Gen9SHT -NoProfile -ErrorAction Stop | Select-Object -First 1 
+    $SHT            = Get-HPOVServerHardwareTypes -Name "SY 480 Gen9 1" -ErrorAction Stop
+    $Template       = Get-HPOVServerProfileTemplate -Name "HPE Synergy 480 Gen9 with Local Boot for RHEL Template" -ErrorAction Stop
+    $Server         = Get-HPOVServer -ServerHardwareType $SHT -NoProfile -ErrorAction Stop | Select-Object -First 1 
     
     $params = @{
         AssignmentType        = "Server";
-        Description           = "HPE Synergy 480 Gen9 Server";
-        Name                  = "SP - SY480-RHEL-Local-Storage";
+        Description           = "HPE Synergy 480 Gen9 Server with Local Boot for RHEL";
+        Name                  = "SY480-Gen9-RHEL-Local-Storage";
         Server                = $Server;
         ServerProfileTemplate = $Template
     }
 
     New-HPOVServerProfile @params | Wait-HPOVTaskComplete
-
-    Write-Output "SY480 Local Storage Server Profile Created" | Timestamp
+    Write-Output "SY480 Gen9 Local Boot for RHEL Server Profile Created" | Timestamp
 }
 
 
-function Create_Server_Profile_Template_SY660_Windows_SAN_Storage
+function Create_Server_Profile_Template_SY660_Gen9_Windows_SAN_Storage
 {
-    Write-Output "Creating SAN Storage Server Profile Template" | Timestamp
+    Write-Output "Creating SY660 Gen9 with Local Boot and SAN Storage for Windows Server Profile Template" | Timestamp
 
-    $SY660Gen9SHT      = Get-HPOVServerHardwareTypes -name "SY 660 Gen9 1" -ErrorAction Stop
+    $SHT               = Get-HPOVServerHardwareTypes -Name "SY 660 Gen9 1" -ErrorAction Stop
     $EnclGroup         = Get-HPOVEnclosureGroup -Name "EG-Synergy-Local" -ErrorAction Stop
     $FWBaseline        = Get-HPOVBaseline
     $Eth1              = Get-HPOVNetwork -Name "Prod_1101" | New-HPOVServerProfileConnection -ConnectionID 1 -Name 'Prod-1101' -PortId "Mezz 3:1-c"
     $Eth2              = Get-HPOVNetwork -Name "Prod_1102" | New-HPOVServerProfileConnection -ConnectionID 2 -Name 'Prod-1102' -PortId "Mezz 3:2-c"
     $FC1               = Get-HPOVNetwork -Name 'SAN A FC' | New-HPOVServerProfileConnection -connectionId 3
     $FC2               = Get-HPOVNetwork -Name 'SAN B FC' | New-HPOVServerProfileConnection -connectionId 4
-    $LogicalDisk       = New-HPOVServerProfileLogicalDisk -Name "SAS RAID5 SSD" -RAID RAID5 -NumberofDrives 3 -DriveType SASSSD
+    $LogicalDisk       = New-HPOVServerProfileLogicalDisk -Name "SAS RAID5 SSD" -RAID RAID5 -NumberofDrives 3 -DriveType SASSSD -Bootable $True
     $SANVol            = Get-HPOVStorageVolume -Name "Shared-Volume-2" | New-HPOVProfileAttachVolume -LunIdType Manual -LunID 0
     $StorageController = New-HPOVServerProfileLogicalDiskController -ControllerID Embedded -Mode RAID -Initialize -LogicalDisk $LogicalDisk
 
     $params = @{
         Affinity                 = "Bay";
         Baseline                 = $FWBaseline;
-        BootMode                 = "UEFI";
+        BootMode                 = "BIOS";
         BootOrder                = "HardDisk";
         Connections              = $Eth1, $Eth2, $FC1, $FC2;
-        Description              = "Server Profile Template for HPE Synergy 660 Gen9 Compute Module with Local and SAN Storage";
+        Description              = "Server Profile Template for HPE Synergy 660 Gen9 Compute Module with Local Boot and SAN Storage for Windows";
         EnclosureGroup           = $EnclGroup;
         Firmware                 = $False;
         FirmwareMode             = "FirmwareOffline";
@@ -397,61 +395,59 @@ function Create_Server_Profile_Template_SY660_Windows_SAN_Storage
         LocalStorage             = $True;
         HostOStype               = "Win2k12";
         ManageBoot               = $True;
-        Name                     = "HPE Synergy 660 Gen9 Windows with SAN Storage Template";
+        Name                     = "HPE Synergy 660 Gen9 with Local Boot and SAN Storage for Windows Template";
         SANStorage               = $True;
-        ServerHardwareType       = $SY660Gen9SHT;
-        ServerProfileDescription = "Server Profile for HPE Synergy 660 Gen9 Compute Module with SAN Storage";
+        ServerHardwareType       = $SHT;
+        ServerProfileDescription = "Server Profile for HPE Synergy 660 Gen9 Compute Module with Local Boot and SAN Storage for Windows";
         StorageController        = $StorageController;
         StorageVolume            = $SANVol
     }
 
     New-HPOVServerProfileTemplate @params | Wait-HPOVTaskComplete
+    Write-Output "SY660 Gen9 with Local Boot and SAN Storage for Windows Server Profile Template Created" | Timestamp
 }
 
 
-function Create_Server_Profile_SY660_Windows_SAN_Storage
+function Create_Server_Profile_SY660_Gen9_Windows_SAN_Storage
 {
-    Write-Output "Creating SAN Storage Server Profile" | Timestamp
+    Write-Output "Creating SY660 Gen9 with Local Boot and SAN Storage for Windows Server Profile" | Timestamp
 
-    $SY660Gen9SHT   = Get-HPOVServerHardwareTypes -name "SY 660 Gen9 1" -ErrorAction Stop
-    $Template       = Get-HPOVServerProfileTemplate -Name "HPE Synergy 660 Gen9 Windows with SAN Storage Template" -ErrorAction Stop
-    $Server         = Get-HPOVServer -ServerHardwareType $SY660Gen9SHT -NoProfile -ErrorAction Stop | Select-Object -First 1
+    $SHT            = Get-HPOVServerHardwareTypes -Name "SY 660 Gen9 1" -ErrorAction Stop
+    $Template       = Get-HPOVServerProfileTemplate -Name "HPE Synergy 660 Gen9 with Local Boot and SAN Storage for Windows Template" -ErrorAction Stop
+    $Server         = Get-HPOVServer -ServerHardwareType $SHT -NoProfile -ErrorAction Stop | Select-Object -First 1
         
     $params = @{
         AssignmentType        = "Server";
-        Description           = "HPE Synergy 660 Gen9 Server";
-        Name                  = "SP - SY660-Windows-SAN-Storage";
+        Description           = "HPE Synergy 660 Gen9 Server with Local Boot and SAN Storage for Windows";
+        Name                  = "SY660-Windows-Local-and-SAN-Storage";
         Server                = $Server;
         ServerProfileTemplate = $Template
     }
 
     New-HPOVServerProfile @params | Wait-HPOVTaskComplete
-
-    Write-Output "SY660 SAN Storage Server Profile Created" | Timestamp
+    Write-Output "SY660 Gen9 with Local Boot and SAN Storage for Windows Server Profile Created" | Timestamp
 }
 
 
-function Create_Server_Profile_Template_SY480_ESX_SAN_Boot
+function Create_Server_Profile_Template_SY480_Gen9_ESX_SAN_Boot
 {
-    Write-Output "Creating SAN Storage Server Profile Template" | Timestamp
+    Write-Output "Creating SY480 Gen9 with SAN Boot for ESX Server Profile Template" | Timestamp
 
-    $SY480Gen9SHT      = Get-HPOVServerHardwareTypes -name "SY 480 Gen9 2" -ErrorAction Stop
+    $SHT               = Get-HPOVServerHardwareTypes -Name "SY 480 Gen9 2" -ErrorAction Stop
     $EnclGroup         = Get-HPOVEnclosureGroup -Name "EG-Synergy-Local" -ErrorAction Stop
     $Eth1              = Get-HPOVNetwork -Name "Prod_1101" | New-HPOVServerProfileConnection -ConnectionID 1 -Name 'Prod-1101' -PortId "Mezz 3:1-c"
     $Eth2              = Get-HPOVNetwork -Name "Prod_1102" | New-HPOVServerProfileConnection -ConnectionID 2 -Name 'Prod-1102' -PortId "Mezz 3:2-c"
     $FC1               = Get-HPOVNetwork -Name 'SAN A FC' | New-HPOVServerProfileConnection -ConnectionID 3 -Bootable -Priority Primary -BootVolumeSource ManagedVolume -ConnectionType FibreChannel
     $FC2               = Get-HPOVNetwork -Name 'SAN B FC' | New-HPOVServerProfileConnection -ConnectionID 4 -Bootable -Priority Secondary -BootVolumeSource ManagedVolume -ConnectionType FibreChannel
     $StoragePool       = Get-HPOVStoragePool -Name FST_CPG1 -StorageSystem ThreePAR-1 -ErrorAction Stop
-    $LogicalDisk       = New-HPOVServerProfileLogicalDisk -Name "SAS RAID5 SSD" -RAID RAID5 -NumberofDrives 3 -DriveType SASSSD
     $SANVol            = New-HPOVServerProfileAttachVolume -Name BootVol -StoragePool $StoragePool -BootVolume -Capacity 100 -LunIdType Auto
-    $StorageController = New-HPOVServerProfileLogicalDiskController -ControllerID Embedded -Mode RAID -Initialize -LogicalDisk $LogicalDisk
 
     $params = @{
         Affinity                 = "Bay";
         BootMode                 = "BIOS";
         BootOrder                = "HardDisk";
         Connections              = $Eth1, $Eth2, $FC1, $FC2;
-        Description              = "Server Profile Template for HPE Synergy 480 Gen9 Compute Module with Local and SAN Storage";
+        Description              = "Server Profile Template for HPE Synergy 480 Gen9 Compute Module with SAN Boot for ESX";
         EnclosureGroup           = $EnclGroup;
         Firmware                 = $False;
         FirmwareMode             = "FirmwareOffline";
@@ -459,37 +455,95 @@ function Create_Server_Profile_Template_SY480_ESX_SAN_Boot
         LocalStorage             = $True;
         HostOStype               = "VMware";
         ManageBoot               = $True;
-        Name                     = "HPE Synergy 480 Gen9 ESX with SAN Boot Template";
+        Name                     = "HPE Synergy 480 Gen9 with SAN Boot for ESX Template";
         SANStorage               = $True;
-        ServerHardwareType       = $SY480Gen9SHT;
-        ServerProfileDescription = "Server Profile for HPE Synergy 480 Gen9 Compute Module with SAN Boot";
-        StorageController        = $StorageController;
+        ServerHardwareType       = $SHT;
+        ServerProfileDescription = "Server Profile for HPE Synergy 480 Gen9 Compute Module with SAN Boot for ESX";
         StorageVolume            = $SANVol
     }
 
     New-HPOVServerProfileTemplate @params | Wait-HPOVTaskComplete
+    Write-Output "SY480 Gen9 with SAN Boot for ESX Server Profile Template Created" | Timestamp
 }
 
 
-function Create_Server_Profile_SY480_ESX_SAN_Boot
+function Create_Server_Profile_SY480_Gen9_ESX_SAN_Boot
 {
-    Write-Output "Creating SAN Storage Server Profile" | Timestamp
+    Write-Output "Creating SY480 Gen9 SAN Boot for ESX Server Profile" | Timestamp
 
-    $SY480Gen9SHT   = Get-HPOVServerHardwareTypes -name "SY 480 Gen9 2" -ErrorAction Stop
-    $Template       = Get-HPOVServerProfileTemplate -Name "HPE Synergy 480 Gen9 ESX with SAN Boot Template" -ErrorAction Stop
-    $Server         = Get-HPOVServer -ServerHardwareType $SY480Gen9SHT -NoProfile -ErrorAction Stop | Select-Object -First 1
+    $SHT            = Get-HPOVServerHardwareTypes -Name "SY 480 Gen9 2" -ErrorAction Stop
+    $Template       = Get-HPOVServerProfileTemplate -Name "HPE Synergy 480 Gen9 with SAN Boot for ESX Template" -ErrorAction Stop
+    $Server         = Get-HPOVServer -ServerHardwareType $SHT -NoProfile -ErrorAction Stop | Select-Object -First 1
         
     $params = @{
         AssignmentType        = "Server";
-        Description           = "HPE Synergy 480 Gen9 Server";
-        Name                  = "SP - SY480-ESX-SAN-Storage";
+        Description           = "HPE Synergy 480 Gen9 Server with SAN Boot for ESX";
+        Name                  = "SY480-Gen9-ESX-SAN-Boot";
         Server                = $Server;
         ServerProfileTemplate = $Template
     }
 
     New-HPOVServerProfile @params | Wait-HPOVTaskComplete
+    Write-Output "SY480 Gen9 with SAN Boot for ESX Server Profile Created" | Timestamp
+}
 
-    Write-Output "SY480 SAN Storage Server Profile Created" | Timestamp
+
+function Create_Server_Profile_Template_SY480_Gen10_ESX_SAN_Boot
+{
+    Write-Output "Creating SY480 Gen10 with SAN Boot for ESX Server Profile Template" | Timestamp
+
+    $SHT               = Get-HPOVServerHardwareTypes -Name "SY 480 Gen10 1" -ErrorAction Stop
+    $EnclGroup         = Get-HPOVEnclosureGroup -Name "EG-Synergy-Local" -ErrorAction Stop
+    $Eth1              = Get-HPOVNetwork -Name "Prod_1101" | New-HPOVServerProfileConnection -ConnectionID 1 -Name 'Prod-1101' -PortId "Mezz 3:1-c"
+    $Eth2              = Get-HPOVNetwork -Name "Prod_1102" | New-HPOVServerProfileConnection -ConnectionID 2 -Name 'Prod-1102' -PortId "Mezz 3:2-c"
+    $FC1               = Get-HPOVNetwork -Name 'SAN A FC' | New-HPOVServerProfileConnection -ConnectionID 3 -Bootable -Priority Primary -BootVolumeSource ManagedVolume -ConnectionType FibreChannel
+    $FC2               = Get-HPOVNetwork -Name 'SAN B FC' | New-HPOVServerProfileConnection -ConnectionID 4 -Bootable -Priority Secondary -BootVolumeSource ManagedVolume -ConnectionType FibreChannel
+    $StoragePool       = Get-HPOVStoragePool -Name FST_CPG1 -StorageSystem ThreePAR-2 -ErrorAction Stop
+    $SANVol            = New-HPOVServerProfileAttachVolume -Name BootVol-Gen10 -StoragePool $StoragePool -BootVolume -Capacity 100 -LunIdType Auto
+
+    $params = @{
+        Affinity                 = "Bay";
+        BootMode                 = "BIOS";
+        BootOrder                = "HardDisk";
+        Connections              = $Eth1, $Eth2, $FC1, $FC2;
+        Description              = "Server Profile Template for HPE Synergy 480 Gen10 Compute Module with SAN Boot for ESX";
+        EnclosureGroup           = $EnclGroup;
+        Firmware                 = $False;
+        FirmwareMode             = "FirmwareOffline";
+        HideUnusedFlexNics       = $True;
+        LocalStorage             = $True;
+        HostOStype               = "VMware";
+        ManageBoot               = $True;
+        Name                     = "HPE Synergy 480 Gen10 with SAN Boot for ESX Template";
+        SANStorage               = $True;
+        ServerHardwareType       = $SHT;
+        ServerProfileDescription = "Server Profile for HPE Synergy 480 Gen10 Compute Module with SAN Boot for ESX";
+        StorageVolume            = $SANVol
+}
+
+    New-HPOVServerProfileTemplate @params | Wait-HPOVTaskComplete
+    Write-Output "SY480 Gen10 with SAN Boot for ESX Server Profile Template Created" | Timestamp
+}
+
+
+function Create_Server_Profile_SY480_Gen10_ESX_SAN_Boot
+{
+    Write-Output "Creating SY480 Gen10 SAN Boot for ESX Server Profile" | Timestamp
+
+    $SHT            = Get-HPOVServerHardwareTypes -Name "SY 480 Gen10 1" -ErrorAction Stop
+    $Template       = Get-HPOVServerProfileTemplate -Name "HPE Synergy 480 Gen10 with SAN Boot for ESX Template" -ErrorAction Stop
+    $Server         = Get-HPOVServer -ServerHardwareType $SHT -NoProfile -ErrorAction Stop | Select-Object -First 1
+        
+    $params = @{
+        AssignmentType        = "Server";
+        Description           = "HPE Synergy 480 Gen10 Server with SAN Boot for ESX";
+        Name                  = "SY480-Gen10-ESX-SAN-Boot";
+        Server                = $Server;
+        ServerProfileTemplate = $Template
+    }
+
+    New-HPOVServerProfile @params | Wait-HPOVTaskComplete
+    Write-Output "SY480 Gen10 with SAN Boot for ESX Server Profile Created" | Timestamp
 }
 
 
@@ -613,12 +667,14 @@ Create_Uplink_Sets
 Create_Enclosure_Group
 Create_Logical_Enclosure
 Add_Scopes
-Create_Server_Profile_Template_SY480_RHEL_Local_Storage
-Create_Server_Profile_Template_SY660_Windows_SAN_Storage
-Create_Server_Profile_Template_SY480_ESX_SAN_Boot
-Create_Server_Profile_SY480_RHEL_Local_Storage
-Create_Server_Profile_SY660_Windows_SAN_Storage
-Create_Server_Profile_SY480_ESX_SAN_Boot
+Create_Server_Profile_Template_SY480_Gen9_RHEL_Local_Boot
+Create_Server_Profile_Template_SY660_Gen9_Windows_SAN_Storage
+Create_Server_Profile_Template_SY480_Gen9_ESX_SAN_Boot
+Create_Server_Profile_Template_SY480_Gen10_ESX_SAN_Boot
+Create_Server_Profile_SY480_Gen9_RHEL_Local_Boot
+Create_Server_Profile_SY660_Gen9_Windows_SAN_Storage
+Create_Server_Profile_SY480_Gen9_ESX_SAN_Boot
+Create_Server_Profile_SY480_Gen10_ESX_SAN_Boot
 
 #
 # Add Second Enclosure Group for Remote Enclosures
