@@ -3,7 +3,7 @@
 #
 # - Example script for de-configuring the HPE Synergy Appliance
 #
-#   VERSION 1.0
+#   VERSION 3.1
 #
 #   AUTHORS
 #   Dave Olker - Global Solutions Engineering (BEST)
@@ -180,7 +180,7 @@ function Remove_SAN_Managers
 function Remove_Licenses
 {
     Write-Output "Removing all Licenses" | Timestamp
-    Get-HPOVLicense | Remove-HPOVLicense -Confirm:$false | Wait-HPOVTaskComplete
+    Get-HPOVLicense | Remove-HPOVLicense -Confirm:$false
     Write-Output "All Licenses Removed" | Timestamp
 }
 
@@ -219,9 +219,9 @@ function Remove_Scopes
 #
 ##############################################################################
 
-if (-not (get-module HPOneview.300)) 
+if (-not (get-module HPOneview.310)) 
 {
-    Import-Module HPOneView.300
+    Import-Module HPOneView.310
 }
 
 if (-not $ConnectedSessions) 
