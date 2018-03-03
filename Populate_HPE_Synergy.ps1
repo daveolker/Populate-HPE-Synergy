@@ -3,7 +3,7 @@
 #
 # - Example script for configuring the HPE Synergy Appliance
 #
-#   VERSION 3.1
+#   VERSION 4.00
 #
 #   AUTHORS
 #   Dave Olker - HPE Global Solutions Engineering (BEST)
