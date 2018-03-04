@@ -415,7 +415,7 @@ function Create_Server_Profile_SY660_Gen9_Windows_SAN_Storage
     $params = @{
         AssignmentType        = "Server";
         Description           = "HPE Synergy 660 Gen9 Server with Local Boot and SAN Storage for Windows";
-        Name                  = "SY660-Windows-Local-and-SAN-Storage";
+        Name                  = "SY660-Gen9-Windows-Local-and-SAN-Storage";
         Server                = $Server;
         ServerProfileTemplate = $Template
     }
