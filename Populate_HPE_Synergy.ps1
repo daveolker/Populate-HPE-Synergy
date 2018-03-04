@@ -487,7 +487,7 @@ function Create_Server_Profile_SY480_Gen9_ESX_SAN_Boot
 function Create_Server_Profile_Template_SY480_Gen10_ESX_SAN_Boot
 {
     Write-Output "Creating SY480 Gen10 with SAN Boot for ESX Server Profile Template" | Timestamp
-
+   
     $SHT               = Get-HPOVServerHardwareTypes -Name "SY 480 Gen10 1" -ErrorAction Stop
     $EnclGroup         = Get-HPOVEnclosureGroup -Name "EG-Synergy-Local" -ErrorAction Stop
     $Eth1              = Get-HPOVNetwork -Name "Prod_1101" | New-HPOVServerProfileConnection -ConnectionID 1 -Name 'Prod-1101' -PortId "Mezz 3:1-c"
@@ -497,25 +497,53 @@ function Create_Server_Profile_Template_SY480_Gen10_ESX_SAN_Boot
     $StoragePool       = Get-HPOVStoragePool -Name FST_CPG1 -StorageSystem ThreePAR-2 -ErrorAction Stop
     $SANVol            = New-HPOVServerProfileAttachVolume -Name BootVol-Gen10 -StoragePool $StoragePool -BootVolume -Capacity 100 -LunIdType Auto
 
-    $params = @{
-        Affinity                 = "Bay";
-        BootMode                 = "BIOS";
-        BootOrder                = "HardDisk";
-        Connections              = $Eth1, $Eth2, $FC1, $FC2;
-        Description              = "Server Profile Template for HPE Synergy 480 Gen10 Compute Module with SAN Boot for ESX";
-        EnclosureGroup           = $EnclGroup;
-        Firmware                 = $False;
-        FirmwareMode             = "FirmwareOffline";
-        HideUnusedFlexNics       = $True;
-        LocalStorage             = $True;
-        HostOStype               = "VMware";
-        ManageBoot               = $True;
-        Name                     = "HPE Synergy 480 Gen10 with SAN Boot for ESX Template";
-        SANStorage               = $True;
-        ServerHardwareType       = $SHT;
-        ServerProfileDescription = "Server Profile for HPE Synergy 480 Gen10 Compute Module with SAN Boot for ESX";
-        StorageVolume            = $SANVol
-}
+    #
+    # Check if firmware bundles are installed.  If there are, select the last one
+    # and modify the firmware-related variables in the Server Profile Template
+    #
+    $FW = Get-HPOVBaseline | Measure-Object
+    if ($FW.Count -ge 1) {
+        $FWBaseline = Get-HPOVBaseline | Select-Object -Last 1
+        $params = @{
+            Affinity                 = "Bay";
+            Baseline                 = $FWBaseline;
+            BootMode                 = "BIOS";
+            BootOrder                = "HardDisk";
+            Connections              = $Eth1, $Eth2, $FC1, $FC2;
+            Description              = "Server Profile Template for HPE Synergy 480 Gen10 Compute Module with SAN Boot for ESX";
+            EnclosureGroup           = $EnclGroup;
+            Firmware                 = $True;
+            FirmwareMode             = "FirmwareOffline";
+            HideUnusedFlexNics       = $True;
+            LocalStorage             = $True;
+            HostOStype               = "VMware";
+            ManageBoot               = $True;
+            Name                     = "HPE Synergy 480 Gen10 with SAN Boot for ESX Template";
+            SANStorage               = $True;
+            ServerHardwareType       = $SHT;
+            ServerProfileDescription = "Server Profile for HPE Synergy 480 Gen10 Compute Module with SAN Boot for ESX";
+            StorageVolume            = $SANVol
+        }
+    } else {
+        $params = @{
+            Affinity                 = "Bay";
+            BootMode                 = "BIOS";
+            BootOrder                = "HardDisk";
+            Connections              = $Eth1, $Eth2, $FC1, $FC2;
+            Description              = "Server Profile Template for HPE Synergy 480 Gen10 Compute Module with SAN Boot for ESX";
+            EnclosureGroup           = $EnclGroup;
+            Firmware                 = $False;
+            HideUnusedFlexNics       = $True;
+            LocalStorage             = $True;
+            HostOStype               = "VMware";
+            ManageBoot               = $True;
+            Name                     = "HPE Synergy 480 Gen10 with SAN Boot for ESX Template";
+            SANStorage               = $True;
+            ServerHardwareType       = $SHT;
+            ServerProfileDescription = "Server Profile for HPE Synergy 480 Gen10 Compute Module with SAN Boot for ESX";
+            StorageVolume            = $SANVol
+        }
+    }
 
     New-HPOVServerProfileTemplate @params | Wait-HPOVTaskComplete
     Write-Output "SY480 Gen10 with SAN Boot for ESX Server Profile Template Created" | Timestamp
