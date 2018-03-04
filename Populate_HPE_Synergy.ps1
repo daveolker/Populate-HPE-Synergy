@@ -354,7 +354,7 @@ function Create_Server_Profile_SY480_Gen9_RHEL_Local_Boot
     $params = @{
         AssignmentType        = "Server";
         Description           = "HPE Synergy 480 Gen9 Server with Local Boot for RHEL";
-        Name                  = "SY480-Gen9-RHEL-Local-Storage";
+        Name                  = "SY480-Gen9-RHEL-Local-Boot";
         Server                = $Server;
         ServerProfileTemplate = $Template
     }
@@ -415,7 +415,7 @@ function Create_Server_Profile_SY660_Gen9_Windows_SAN_Storage
     $params = @{
         AssignmentType        = "Server";
         Description           = "HPE Synergy 660 Gen9 Server with Local Boot and SAN Storage for Windows";
-        Name                  = "SY660-Gen9-Windows-Local-and-SAN-Storage";
+        Name                  = "SY660-Gen9-Windows-Local-Boot-and-SAN-Storage";
         Server                = $Server;
         ServerProfileTemplate = $Template
     }
