@@ -310,7 +310,6 @@ function Create_Server_Profile_Template_SY480_Gen9_RHEL_Local_Boot
     
     $SHT               = Get-HPOVServerHardwareTypes -Name "SY 480 Gen9 1" -ErrorAction Stop
     $EnclGroup         = Get-HPOVEnclosureGroup -Name "EG-Synergy-Local" -ErrorAction Stop
-    $FWBaseline        = Get-HPOVBaseline
     $Eth1              = Get-HPOVNetwork -Name "Prod_1101" | New-HPOVServerProfileConnection -ConnectionID 1 -Name 'Prod-1101' -PortId "Mezz 3:1-c"
     $Eth2              = Get-HPOVNetwork -Name "Prod_1102" | New-HPOVServerProfileConnection -ConnectionID 2 -Name 'Prod-1102' -PortId "Mezz 3:2-c"
     $Deploy1           = Get-HPOVNetwork -Name "Deployment" | New-HPOVServerProfileConnection -ConnectionID 3 -Name 'Deployment Network A' -PortId "Mezz 3:1-a" -Bootable -Priority Primary
@@ -320,7 +319,6 @@ function Create_Server_Profile_Template_SY480_Gen9_RHEL_Local_Boot
     
     $params = @{
         Affinity                 = "Bay";
-        Baseline                 = $FWBaseline;
         BootMode                 = "BIOS";
         BootOrder                = "HardDisk";
         Connections              = $Eth1, $Eth2, $Deploy1, $Deploy2;
@@ -372,7 +370,6 @@ function Create_Server_Profile_Template_SY660_Gen9_Windows_SAN_Storage
 
     $SHT               = Get-HPOVServerHardwareTypes -Name "SY 660 Gen9 1" -ErrorAction Stop
     $EnclGroup         = Get-HPOVEnclosureGroup -Name "EG-Synergy-Local" -ErrorAction Stop
-    $FWBaseline        = Get-HPOVBaseline
     $Eth1              = Get-HPOVNetwork -Name "Prod_1101" | New-HPOVServerProfileConnection -ConnectionID 1 -Name 'Prod-1101' -PortId "Mezz 3:1-c"
     $Eth2              = Get-HPOVNetwork -Name "Prod_1102" | New-HPOVServerProfileConnection -ConnectionID 2 -Name 'Prod-1102' -PortId "Mezz 3:2-c"
     $FC1               = Get-HPOVNetwork -Name 'SAN A FC' | New-HPOVServerProfileConnection -connectionId 3
@@ -383,7 +380,6 @@ function Create_Server_Profile_Template_SY660_Gen9_Windows_SAN_Storage
 
     $params = @{
         Affinity                 = "Bay";
-        Baseline                 = $FWBaseline;
         BootMode                 = "BIOS";
         BootOrder                = "HardDisk";
         Connections              = $Eth1, $Eth2, $FC1, $FC2;
