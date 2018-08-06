@@ -53,11 +53,11 @@ function Configure_Address_Pools
 }
 
 
-function Remove_VSN_Address_Pools
+function Disable_VSN_Address_Pools
 {
-    Write-Output "Removing Address Pools for Virtual Serial Numbers" | Timestamp
-    Get-HPOVAddressPoolRange -Type vsn | Remove-HPOVAddressPoolRange -Confirm:$false
-    Write-Output "Virtual Serial Number Address Pool Ranges Removed" | Timestamp
+    Write-Output "Disabling Address Pools for Virtual Serial Numbers" | Timestamp
+    Send-HPOVRequest -uri "/rest/id-pools/vsn" -method PUT -body @{'type' = 'Pool'; 'enabled' = 'false'}
+    Write-Output "Virtual Serial Number Address Pool Ranges Disabled" | Timestamp
 }
 
 
@@ -706,7 +706,7 @@ Write-Output "Configuring HPE Synergy Appliance" | Timestamp
 #Configure_Time_and_Locale
 #Configure_SMTP
 #Configure_Address_Pools
-Remove_VSN_Address_Pools
+#Disable_VSN_Address_Pools
 #Add_Remote_Enclosures
 #Rename_Enclosures
 #PowerOff_All_Servers
