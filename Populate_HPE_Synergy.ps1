@@ -53,6 +53,14 @@ function Configure_Address_Pools
 }
 
 
+function Remove_VSN_Address_Pools
+{
+    Write-Output "Removing Address Pools for Virtual Serial Numbers" | Timestamp
+    Get-HPOVAddressPoolRange -Type vsn | Remove-HPOVAddressPoolRange -Confirm:$false
+    Write-Output "Virtual Serial Number Address Pool Ranges Removed" | Timestamp
+}
+
+
 function Configure_SAN_Managers
 {
     Write-Output "Configuring SAN Managers" | Timestamp
@@ -618,8 +626,17 @@ function Add_Scopes
 function Configure_Time_and_Locale
 {
     Write-Output "Configuring Time and Locale" | Timestamp
-    Set-HPOVApplianceDateTime -Locale "en_US" -NTPServers 159.140.82.4,159.140.82.5,159.140.82.6 -PollingInterval 60
+    Set-HPOVApplianceDateTime -Locale $Locale -NTPServers $NTP1,$NTP2,$NTP3 -PollingInterval 60
     Write-Output "Time and Locale Configured" | Timestamp
+}
+
+
+function Configure_SMTP
+{
+    Write-Output "Configuring SMTP Settings" | Timestamp
+    Set-HPOVSmtpConfig -SenderEmailAddress $SMTPEmailAddress -Server $SMTPEmailServer -Port $SMTPEmailPort -ConnectionSecurity $SMTPEmailSecurity
+    Add-HPOVSmtpAlertEmailFilter -Name "All alerts to T2 Converged Ops Team" -Emails $SMTPEmailAddress 
+    Write-Output "SMTP Settings Configured" | Timestamp
 }
 
 
@@ -686,8 +703,10 @@ Write-Output "Configuring HPE Synergy Appliance" | Timestamp
 
 #Add_Firmware_Bundle
 #Add_Licenses
-Configure_Time_and_Locale
+#Configure_Time_and_Locale
+#Configure_SMTP
 #Configure_Address_Pools
+Remove_VSN_Address_Pools
 #Add_Remote_Enclosures
 #Rename_Enclosures
 #PowerOff_All_Servers
