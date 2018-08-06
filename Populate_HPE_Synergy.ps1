@@ -615,6 +615,14 @@ function Add_Scopes
 }
 
 
+function Configure_Time_and_Locale
+{
+    Write-Output "Configuring Time and Locale" | Timestamp
+    Set-HPOVApplianceDateTime -Locale "en_US" -NTPServers 159.140.82.4,159.140.82.5,159.140.82.6 -PollingInterval 60
+    Write-Output "Time and Locale Configured" | Timestamp
+}
+
+
 ##############################################################################
 #
 # Main Program
@@ -676,36 +684,37 @@ if (Test-Path $config_file) {
 
 Write-Output "Configuring HPE Synergy Appliance" | Timestamp
 
-Add_Firmware_Bundle
-Add_Licenses
-Configure_Address_Pools
-Add_Remote_Enclosures
-Rename_Enclosures
-PowerOff_All_Servers
-Configure_SAN_Managers
-Configure_Networks
-Add_Storage
-Add_Users
-Create_OS_Deployment_Server
-Create_Logical_Interconnect_Groups
-Create_Uplink_Sets
-Create_Enclosure_Group
-Create_Logical_Enclosure
-Add_Scopes
-Create_Server_Profile_Template_SY480_Gen9_RHEL_Local_Boot
-Create_Server_Profile_Template_SY660_Gen9_Windows_SAN_Storage
-Create_Server_Profile_Template_SY480_Gen9_ESX_SAN_Boot
-Create_Server_Profile_Template_SY480_Gen10_ESX_SAN_Boot
-Create_Server_Profile_SY480_Gen9_RHEL_Local_Boot
-Create_Server_Profile_SY660_Gen9_Windows_SAN_Storage
-Create_Server_Profile_SY480_Gen9_ESX_SAN_Boot
-Create_Server_Profile_SY480_Gen10_ESX_SAN_Boot
+#Add_Firmware_Bundle
+#Add_Licenses
+Configure_Time_and_Locale
+#Configure_Address_Pools
+#Add_Remote_Enclosures
+#Rename_Enclosures
+#PowerOff_All_Servers
+#Configure_SAN_Managers
+#Configure_Networks
+#Add_Storage
+#Add_Users
+#Create_OS_Deployment_Server
+#Create_Logical_Interconnect_Groups
+#Create_Uplink_Sets
+#Create_Enclosure_Group
+#Create_Logical_Enclosure
+#Add_Scopes
+#Create_Server_Profile_Template_SY480_Gen9_RHEL_Local_Boot
+#Create_Server_Profile_Template_SY660_Gen9_Windows_SAN_Storage
+#Create_Server_Profile_Template_SY480_Gen9_ESX_SAN_Boot
+#Create_Server_Profile_Template_SY480_Gen10_ESX_SAN_Boot
+#Create_Server_Profile_SY480_Gen9_RHEL_Local_Boot
+#Create_Server_Profile_SY660_Gen9_Windows_SAN_Storage
+#Create_Server_Profile_SY480_Gen9_ESX_SAN_Boot
+#Create_Server_Profile_SY480_Gen10_ESX_SAN_Boot
 
 #
 # Add Second Enclosure Group for Remote Enclosures
 #
-Create_Logical_Interconnect_Groups_Remote
-Create_Enclosure_Group_Remote
-Create_Logical_Enclosure_Remote
+#Create_Logical_Interconnect_Groups_Remote
+#Create_Enclosure_Group_Remote
+#Create_Logical_Enclosure_Remote
 
 Write-Output "HPE Synergy Appliance Configuration Complete" | Timestamp
