@@ -152,20 +152,17 @@ function Add_Storage
 function Rename_Enclosures
 {
     Write-Output "Renaming Enclosures" | Timestamp
-    $Enc = Get-HPOVEnclosure -Name 0000A66101 -ErrorAction SilentlyContinue
-    Set-HPOVEnclosure -Name Synergy-Encl-1 -Enclosure $Enc | Wait-HPOVTaskComplete
+    $Enc = Get-HPOVEnclosure -Name $Enc1SN -ErrorAction Stop
+    Set-HPOVEnclosure -Name $Enc1Name -Enclosure $Enc | Wait-HPOVTaskComplete
 
-    $Enc = Get-HPOVEnclosure -Name 0000A66102 -ErrorAction SilentlyContinue
-    Set-HPOVEnclosure -Name Synergy-Encl-2 -Enclosure $Enc | Wait-HPOVTaskComplete
+    $Enc = Get-HPOVEnclosure -Name $Enc2SN -ErrorAction Stop
+    Set-HPOVEnclosure -Name $Enc2Name -Enclosure $Enc | Wait-HPOVTaskComplete
 
-    $Enc = Get-HPOVEnclosure -Name 0000A66103 -ErrorAction SilentlyContinue
-    Set-HPOVEnclosure -Name Synergy-Encl-3 -Enclosure $Enc | Wait-HPOVTaskComplete
+    $Enc = Get-HPOVEnclosure -Name $Enc3SN -ErrorAction Stop
+    Set-HPOVEnclosure -Name $Enc3Name -Enclosure $Enc | Wait-HPOVTaskComplete
 
-    $Enc = Get-HPOVEnclosure -Name 0000A66104 -ErrorAction SilentlyContinue
-    Set-HPOVEnclosure -Name Synergy-Encl-4 -Enclosure $Enc | Wait-HPOVTaskComplete
-
-    $Enc = Get-HPOVEnclosure -Name 0000A66105 -ErrorAction SilentlyContinue
-    Set-HPOVEnclosure -Name Synergy-Encl-5 -Enclosure $Enc | Wait-HPOVTaskComplete
+    $Enc = Get-HPOVEnclosure -Name $Enc4SN -ErrorAction Stop
+    Set-HPOVEnclosure -Name $Enc4Name -Enclosure $Enc | Wait-HPOVTaskComplete
 
     Write-Output "All Enclosures Renamed" | Timestamp
 }
