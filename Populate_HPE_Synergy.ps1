@@ -46,9 +46,28 @@ function Add_Remote_Enclosures
 function Configure_Address_Pools
 {
     Write-Output "Configuring Address Pools for MAC, WWN, and Serial Numbers" | Timestamp
-    New-HPOVAddressPoolRange -PoolType vmac -RangeType Generated
-    New-HPOVAddressPoolRange -PoolType vwwn -RangeType Generated
-    New-HPOVAddressPoolRange -PoolType vsn -RangeType Generated
+
+    if ($vMACAddressPoolRangeStart)
+    {
+        New-HPOVAddressPoolRange -PoolType vmac -RangeType Custom -Start $vMACAddressPoolRangeStart -End $vMACAddressPoolRangeEnd
+    } else {
+        New-HPOVAddressPoolRange -PoolType vmac -RangeType Generated
+    }
+
+    if ($vWWNAddressPoolRangeStart)
+    {
+        New-HPOVAddressPoolRange -PoolType vwwn -RangeType Custom -Start $vWWNAddressPoolRangeStart -End $vWWNAddressPoolRangeEnd
+    } else {
+        New-HPOVAddressPoolRange -PoolType vwwn -RangeType Generated
+    }
+    
+    if ($vSNAddressPoolRangeStart)
+    {
+        New-HPOVAddressPoolRange -PoolType vsn -RangeType Custom -Start $vSNAddressPoolRangeStart -End $vSNAddressPoolRangeEnd
+    } else {
+        New-HPOVAddressPoolRange -PoolType vsn -RangeType Generated
+    }
+    
     Write-Output "Address Pool Ranges Configuration Complete" | Timestamp
 }
 
@@ -708,7 +727,7 @@ Write-Output "Configuring HPE Synergy Appliance" | Timestamp
 #Configure_Time_and_Locale
 #Configure_SMTP
 #Configure_Address_Pools
-#Disable_VSN_Address_Pools
+Disable_VSN_Address_Pools
 #Add_Remote_Enclosures
 #Rename_Enclosures
 #PowerOff_All_Servers
