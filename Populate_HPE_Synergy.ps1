@@ -49,23 +49,35 @@ function Configure_Address_Pools
 
     if ($vMACAddressPoolRangeStart)
     {
-        New-HPOVAddressPoolRange -PoolType vmac -RangeType Custom -Start $vMACAddressPoolRangeStart -End $vMACAddressPoolRangeEnd
+        New-HPOVAddressPoolRange    -PoolType vmac                      `
+                                    -RangeType Custom                   `
+                                    -Start $vMACAddressPoolRangeStart   `
+                                    -End $vMACAddressPoolRangeEnd
     } else {
-        New-HPOVAddressPoolRange -PoolType vmac -RangeType Generated
+        New-HPOVAddressPoolRange    -PoolType vmac                      `
+                                    -RangeType Generated
     }
 
     if ($vWWNAddressPoolRangeStart)
     {
-        New-HPOVAddressPoolRange -PoolType vwwn -RangeType Custom -Start $vWWNAddressPoolRangeStart -End $vWWNAddressPoolRangeEnd
+        New-HPOVAddressPoolRange    -PoolType vwwn                      `
+                                    -RangeType Custom                   `
+                                    -Start $vWWNAddressPoolRangeStart   `
+                                    -End $vWWNAddressPoolRangeEnd
     } else {
-        New-HPOVAddressPoolRange -PoolType vwwn -RangeType Generated
+        New-HPOVAddressPoolRange    -PoolType vwwn                      `
+                                    -RangeType Generated
     }
     
     if ($vSNAddressPoolRangeStart)
     {
-        New-HPOVAddressPoolRange -PoolType vsn -RangeType Custom -Start $vSNAddressPoolRangeStart -End $vSNAddressPoolRangeEnd
+        New-HPOVAddressPoolRange    -PoolType vsn                       `
+                                    -RangeType Custom                   `
+                                    -Start $vSNAddressPoolRangeStart    `
+                                    -End $vSNAddressPoolRangeEnd
     } else {
-        New-HPOVAddressPoolRange -PoolType vsn -RangeType Generated
+        New-HPOVAddressPoolRange    -PoolType vsn                       `
+                                    -RangeType Generated
     }
     
     Write-Output "Address Pool Ranges Configuration Complete" | Timestamp
@@ -83,8 +95,39 @@ function Disable_VSN_Address_Pools
 function Configure_SAN_Managers
 {
     Write-Output "Configuring SAN Managers" | Timestamp
-    Add-HPOVSanManager -Hostname 172.18.20.1 -SnmpUserName dcs-SHA-AES128 -SnmpAuthLevel AuthAndPriv -SnmpAuthPassword dcsdcsdcs -SnmpAuthProtocol sha -SnmpPrivPassword dcsdcsdcs -SnmpPrivProtocol aes-128 -Type Cisco -Port 161 | Wait-HPOVTaskComplete
-    Add-HPOVSanManager -Hostname 172.18.20.2 -SnmpUserName dcs-SHA-AES128 -SnmpAuthLevel AuthAndPriv -SnmpAuthPassword dcsdcsdcs -SnmpAuthProtocol sha -SnmpPrivPassword dcsdcsdcs -SnmpPrivProtocol aes-128 -Type Cisco -Port 161 | Wait-HPOVTaskComplete
+
+    [array]$SMHostNames         = $SANManagerHostNames.split(",")
+    [array]$SMType              = $SANManagerType.split(",")
+    [array]$SMPort              = $SANManagerPort.split(",")
+    [array]$SMSNMPAuthProtocol  = $SANManagerSNMPAuthProtocol.split(",")
+    [array]$SMSNMPUser          = $SANManagerSNMPUser.split(",")
+    [array]$SMSNMPAuthLevel     = $SANManagerSNMPAuthLevel.split(",")
+    [array]$SMSNMPAuthPassword  = $SANManagerSNMPAuthPassword.split(",")
+    [array]$SMSNMPPrivPassword  = $SANManagerSNMPPrivPassword.split(",")
+    [array]$SMSNMPPrivProtocol  = $SANManagerSNMPPrivProtocol.split(",")
+
+    if ($SMHostNames)
+    {
+        for ($i = 0; $i -le ($SMHostNames.Length -1); $i += 1)
+        {
+            #
+            # Need to add case for non-Cisco SAN Managers
+            #
+            if ($SMType[$i] -eq "Cisco")
+            {
+                Add-HPOVSanManager  -Hostname $SMHostNames[$i]                  `
+                                    -Type $SMType[$i]                           `
+                                    -SnmpUserName $SMSNMPUser[$i]               `
+                                    -SnmpAuthLevel $SMSNMPAuthLevel[$i]         `
+                                    -SnmpAuthPassword $SMSNMPAuthPassword[$i]   `
+                                    -SnmpAuthProtocol $SMSNMPAuthProtocol[$i]   `
+                                    -SnmpPrivPassword $SMSNMPPrivPassword[$i]   `
+                                    -SnmpPrivProtocol $SMSNMPPrivProtocol[$i]   `
+                                    -Port $SMPort[$i] | Wait-HPOVTaskComplete
+            }
+        }
+    }
+
     Write-Output "SAN Manager Configuration Complete" | Timestamp
 }
 
@@ -726,12 +769,12 @@ Write-Output "Configuring HPE Synergy Appliance" | Timestamp
 #Add_Licenses
 #Configure_Time_and_Locale
 #Configure_SMTP
-#Configure_Address_Pools
+Configure_Address_Pools
 Disable_VSN_Address_Pools
 #Add_Remote_Enclosures
 #Rename_Enclosures
 #PowerOff_All_Servers
-#Configure_SAN_Managers
+Configure_SAN_Managers
 #Configure_Networks
 #Add_Storage
 #Add_Users
