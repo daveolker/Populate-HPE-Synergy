@@ -73,8 +73,8 @@ function Configure_SAN_Managers
 function Configure_Networks
 {
     Write-Output "Adding IPv4 Subnets" | Timestamp
-    New-HPOVAddressPoolSubnet -Domain "mgmt.lan" -Gateway $prod_gateway -NetworkId $prod_subnet -SubnetMask $prod_mask
-    New-HPOVAddressPoolSubnet -Domain "deployment.lan" -Gateway $deploy_gateway -NetworkId $deploy_subnet -SubnetMask $deploy_mask
+    New-HPOVAddressPoolSubnet -Domain $ProdNetDomain -Gateway $ProdNetGateway -NetworkId $ProdNetSubnet -SubnetMask $ProdNetMask -DNSServers $ProdNetDNS1,$ProdNetDNS2,$ProdNetDNS3
+    New-HPOVAddressPoolSubnet -Domain $DeployNetDomain -Gateway $DeployNetGateway -NetworkId $DeployNetSubnet -SubnetMask $DeployNetMask -DNSServers $DeployNetDNS1,$DeployNetDNS2,$DeployNetDNS3
 
     Write-Output "Adding IPv4 Address Pool Ranges" | Timestamp
     Get-HPOVAddressPoolSubnet -NetworkId $prod_subnet | New-HPOVAddressPoolRange -Name Mgmt -Start $prod_pool_start -End $prod_pool_end
@@ -152,17 +152,17 @@ function Add_Storage
 function Rename_Enclosures
 {
     Write-Output "Renaming Enclosures" | Timestamp
-    $Enc = Get-HPOVEnclosure -Name $Enc1SN -ErrorAction Stop
-    Set-HPOVEnclosure -Name $Enc1Name -Enclosure $Enc | Wait-HPOVTaskComplete
+    [array]$EncSerialNums = $EnclosureSerialNumbers.split(",")
+    [array]$EncNames      = $EnclosureNames.split(",")
 
-    $Enc = Get-HPOVEnclosure -Name $Enc2SN -ErrorAction Stop
-    Set-HPOVEnclosure -Name $Enc2Name -Enclosure $Enc | Wait-HPOVTaskComplete
-
-    $Enc = Get-HPOVEnclosure -Name $Enc3SN -ErrorAction Stop
-    Set-HPOVEnclosure -Name $Enc3Name -Enclosure $Enc | Wait-HPOVTaskComplete
-
-    $Enc = Get-HPOVEnclosure -Name $Enc4SN -ErrorAction Stop
-    Set-HPOVEnclosure -Name $Enc4Name -Enclosure $Enc | Wait-HPOVTaskComplete
+    if ($EncSerialNums)
+    {
+        for ($i = 0; $i -le ($EncSerialNums.Length -1); $i += 1)
+        {
+            $Enc = Get-HPOVEnclosure -Name $EncSerialNums[$i] -ErrorAction Stop
+            Set-HPOVEnclosure -Name $EncNames[$i] -Enclosure $Enc | Wait-HPOVTaskComplete
+        }
+    }
 
     Write-Output "All Enclosures Renamed" | Timestamp
 }
@@ -623,7 +623,12 @@ function Add_Scopes
 function Configure_Time_and_Locale
 {
     Write-Output "Configuring Time and Locale" | Timestamp
-    Set-HPOVApplianceDateTime -Locale $Locale -NTPServers $NTP1,$NTP2,$NTP3 -PollingInterval 60
+
+    if ($NTPServers)
+    {
+        Set-HPOVApplianceDateTime -Locale $Locale -NTPServers $NTPServers -PollingInterval 60
+    }
+
     Write-Output "Time and Locale Configured" | Timestamp
 }
 
@@ -632,7 +637,7 @@ function Configure_SMTP
 {
     Write-Output "Configuring SMTP Settings" | Timestamp
     Set-HPOVSmtpConfig -SenderEmailAddress $SMTPEmailAddress -Server $SMTPEmailServer -Port $SMTPEmailPort -ConnectionSecurity $SMTPEmailSecurity
-    Add-HPOVSmtpAlertEmailFilter -Name "All alerts to T2 Converged Ops Team" -Emails $SMTPEmailAddress 
+    Add-HPOVSmtpAlertEmailFilter -Name $SMTPAlertName -Emails $SMTPEmailAddress 
     Write-Output "SMTP Settings Configured" | Timestamp
 }
 
@@ -683,7 +688,7 @@ filter Timestamp {"$(Get-Date -Format G): $_"}
 # Process variables in the Populate_HPE_Synergy-Params.txt file.
 #
 ##########################################################################
-New-Variable -Name config_file -Value .\Populate_HPE_Synergy-Params.txt -Scope Global -Force
+New-Variable -Name config_file -Value .\Populate_HPE_Synergy-Params-DCS.txt -Scope Global -Force
 
 if (Test-Path $config_file) {
     Get-Content $config_file | Where-Object { !$_.StartsWith("#") } | Foreach-Object {

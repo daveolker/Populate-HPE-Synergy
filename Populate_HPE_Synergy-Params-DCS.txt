@@ -26,5 +26,6 @@ SMTPEmailAddress=dave.olker@hpe.com
 SMTPEmailServer=smtp.hpe.com
 SMTPEmailPort=25
 SMTPEmailSecurity=None
+SMTPAlertName="All Alerts"
 EnclosureSerialNumbers=0000A66101,0000A66102,0000A66103
 EnclosureNames=Synergy-Enc-1,Synergy-Enc-2,Synergy-Enc-3
