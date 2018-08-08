@@ -752,8 +752,11 @@ filter Timestamp {"$(Get-Date -Format G): $_"}
 ##########################################################################
 New-Variable -Name config_file -Value .\Populate_HPE_Synergy-Params-DCS.txt -Scope Global -Force
 
+#
+# Remove blank lines and comments from the Params file
+#
 if (Test-Path $config_file) {
-    Get-Content $config_file | Where-Object { !$_.StartsWith("#") } | Foreach-Object {
+    Get-Content $config_file | Where-Object { $_ -and !$_.StartsWith("#") } | Foreach-Object {
         $var = $_.Split('=')
         New-Variable -Name $var[0] -Value $var[1] -Scope Global -Force
     }
@@ -769,12 +772,18 @@ Write-Output "Configuring HPE Synergy Appliance" | Timestamp
 #Add_Licenses
 #Configure_Time_and_Locale
 #Configure_SMTP
-Configure_Address_Pools
-Disable_VSN_Address_Pools
+#Configure_Address_Pools
+#Disable_VSN_Address_Pools
+
+####Not Working
 #Add_Remote_Enclosures
+####
+
 #Rename_Enclosures
 #PowerOff_All_Servers
-Configure_SAN_Managers
+#Configure_SAN_Managers
+
+### Working up to Here
 #Configure_Networks
 #Add_Storage
 #Add_Users

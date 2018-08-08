@@ -6,6 +6,9 @@
 # but may need adjustments when using other Hypervisors.
 #
 ##########################################################################
+#
+# Production Network Settings
+#
 ProdNetSubnet=15.113.228.0
 ProdNetGateway=15.113.228.1
 ProdNetPoolStart=15.113.229.1
@@ -13,6 +16,10 @@ ProdNetPoolEnd=15.113.229.30
 ProdNetMask=255.255.252.0
 ProdNetDomain=mgmt.lan
 ProdNetDNSServers=16.110.135.51,16.110.135.52
+
+#
+# OS Deployment Network Settings
+#
 DeployNetSubnet=10.1.1.0
 DeployNetGateway=10.1.1.1
 DeployNetPoolStart=10.1.1.2
@@ -20,21 +27,41 @@ DeployNetPoolEnd=10.1.1.254
 DeployNetMask=255.255.255.0
 DeployNetDomain=deployment.lan
 DeployNetDNSServers=
+
+#
+# Virtual Address Pool Settings
+#
 vMACAddressPoolRangeStart=5A:05:41:40:00:00
 vMACAddressPoolRangeEnd=5A:05:41:4F:FF:FF
 vWWNAddressPoolRangeStart=10:00:FE:66:AD:10:00:00
 vWWNAddressPoolRangeEnd=10:00:FE:66:AD:1F:FF:FF
 vSNAddressPoolRangeStart=VCUS592000
 vSNAddressPoolRangeEnd=VCUS592ZZZ
+
+#
+# Time and Locale Settings
+#
 NTPServers=16.110.135.123
 Locale=en_US
+
+#
+# SMTP and Alerts Settings
+#
 SMTPEmailAddress=dave.olker@hpe.com
 SMTPEmailServer=smtp.hpe.com
 SMTPEmailPort=25
 SMTPEmailSecurity=None
 SMTPAlertName="All Alerts"
+
+#
+# Enclosure Renaming Settings
+#
 EnclosureSerialNumbers=0000A66101,0000A66102,0000A66103
 EnclosureNames=Synergy-Enc-1,Synergy-Enc-2,Synergy-Enc-3
+
+#
+# SAN Manager Settings
+#
 SANManagerHostNames=172.18.20.1,172.18.20.2
 SANManagerType=Cisco,Cisco
 SANManagerPort=161,161
