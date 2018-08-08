@@ -9,23 +9,25 @@
 #
 # Production Network Settings
 #
+ProdNetName=Mgmt
+ProdNetDomain=mgmt.lan
 ProdNetSubnet=15.113.228.0
 ProdNetGateway=15.113.228.1
 ProdNetPoolStart=15.113.229.1
 ProdNetPoolEnd=15.113.229.30
 ProdNetMask=255.255.252.0
-ProdNetDomain=mgmt.lan
 ProdNetDNSServers=16.110.135.51,16.110.135.52
 
 #
 # OS Deployment Network Settings
 #
+DeployNetName=Deployment
+DeployNetDomain=deployment.lan
 DeployNetSubnet=10.1.1.0
 DeployNetGateway=10.1.1.1
 DeployNetPoolStart=10.1.1.2
 DeployNetPoolEnd=10.1.1.254
 DeployNetMask=255.255.255.0
-DeployNetDomain=deployment.lan
 DeployNetDNSServers=
 
 #

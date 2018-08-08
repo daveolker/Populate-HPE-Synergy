@@ -134,14 +134,36 @@ function Configure_SAN_Managers
 
 function Configure_Networks
 {
-    Write-Output "Adding IPv4 Subnets" | Timestamp
-    New-HPOVAddressPoolSubnet -Domain $ProdNetDomain -Gateway $ProdNetGateway -NetworkId $ProdNetSubnet -SubnetMask $ProdNetMask -DNSServers $ProdNetDNS1,$ProdNetDNS2,$ProdNetDNS3
-    New-HPOVAddressPoolSubnet -Domain $DeployNetDomain -Gateway $DeployNetGateway -NetworkId $DeployNetSubnet -SubnetMask $DeployNetMask -DNSServers $DeployNetDNS1,$DeployNetDNS2,$DeployNetDNS3
+    Write-Output "Adding IPv4 Prod Subnet" | Timestamp
 
-    Write-Output "Adding IPv4 Address Pool Ranges" | Timestamp
-    Get-HPOVAddressPoolSubnet -NetworkId $prod_subnet | New-HPOVAddressPoolRange -Name Mgmt -Start $prod_pool_start -End $prod_pool_end
-    Get-HPOVAddressPoolSubnet -NetworkId $deploy_subnet | New-HPOVAddressPoolRange -Name Deployment -Start $deploy_pool_start -End $deploy_pool_end
+    [array]$ProdDNS                 = $ProdNetDNSServers.split(",")
+    New-HPOVAddressPoolSubnet       -Domain $ProdNetDomain          `
+                                    -Gateway $ProdNetGateway        `
+                                    -NetworkId $ProdNetSubnet       `
+                                    -SubnetMask $ProdNetMask        `
+                                    -DNSServers $ProdDNS
 
+    Get-HPOVAddressPoolSubnet       -NetworkId $ProdNetSubnet |     `
+        New-HPOVAddressPoolRange    -Name $ProdNetName              `
+                                    -Start $ProdNetPoolStart        `
+                                    -End $ProdNetPoolEnd
+
+    Write-Output "Adding IPv4 Deployment Subnet" | Timestamp
+
+    [array]$DeployDNS               = $DeployNetDNSServers.split(",")
+    New-HPOVAddressPoolSubnet       -Domain $DeployNetDomain        `
+                                    -Gateway $DeployNetGateway      `
+                                    -NetworkId $DeployNetSubnet     `
+                                    -SubnetMask $DeployNetMask      `
+                                    -DNSServers $DeployDNS
+    
+    Get-HPOVAddressPoolSubnet       -NetworkId $DeployNetSubnet |   `
+        New-HPOVAddressPoolRange    -Name $DeployNetName            `
+                                    -Start $DeployNetPoolStart      `
+                                    -End $DeployNetPoolEnd
+
+    Exit
+    
     Write-Output "Adding Networks" | Timestamp
     New-HPOVNetwork -Name "ESX Mgmt" -MaximumBandwidth 20000 -Purpose Management -Type Ethernet -TypicalBandwidth 2500 -VlanId 1131 -VLANType Tagged
     New-HPOVNetwork -Name "ESX vMotion" -MaximumBandwidth 20000 -Purpose VMMigration -Type Ethernet -TypicalBandwidth 2500 -VlanId 1132 -VLANType Tagged
@@ -784,7 +806,7 @@ Write-Output "Configuring HPE Synergy Appliance" | Timestamp
 #Configure_SAN_Managers
 
 ### Working up to Here
-#Configure_Networks
+Configure_Networks
 #Add_Storage
 #Add_Users
 #Create_OS_Deployment_Server
