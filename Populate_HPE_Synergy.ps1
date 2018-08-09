@@ -534,6 +534,49 @@ function Configure_StoreVirtual_Storage
 }
 
 
+function Add_Users_and_Groups
+{
+    Write-Output "Adding New Users" | Timestamp
+
+    [array]$UserName                = $SynUserName.split(",").Trim()
+    [array]$UserFullName            = $SynUserFullName.split(",").Trim()
+    [array]$UserPassword            = $SynUserPassword.split(",").Trim()
+    [array]$UserRoles               = $SynUserRoles.split(",").Trim()
+    [array]$UserEmail               = $SynUserEmail.split(",").Trim()
+    [array]$UserOfficePhone         = $SynUserOfficePhone.split(",").Trim()
+    [array]$UserMobilePhone         = $SynUserMobilePhone.split(",").Trim()
+
+    if ($UserName)
+    {
+        for ($i = 0; $i -le ($UserName.Length -1); $i += 1)
+        {
+            New-HPOVUser            -UserName $UserName[$i]                 `
+                                    -FullName $UserFullName[$i]             `
+                                    -Password $UserPassword[$i]             `
+                                    -Roles $UserRoles[$i]                   `
+                                    -EmailAddress $UserEmail[$i]            `
+                                    -OfficePhone $UserOfficePhone[$i]       `
+                                    -MobilePhone $UserMobilePhone[$i]
+        }
+    }
+
+    Write-Output "All Users Added" | Timestamp
+}
+
+
+function Add_Scopes
+{
+    Write-Output "Adding New Scopes" | Timestamp
+
+    New-HPOVScope -Name FinanceScope -Description "Finance Scope of Resources"
+    $Resources += Get-HPOVNetwork -Name Prod*
+    $Resources += Get-HPOVEnclosure -Name Synergy-Encl-1
+    Get-HPOVScope -Name FinanceScope | Add-HPOVResourceToScope -InputObject $Resources
+
+    Write-Output "All New Scopes Added" | Timestamp
+}
+
+
 function Create_Uplink_Sets
 {
     Write-Output "Adding Fibre Channel and FCoE Uplink Sets" | Timestamp
@@ -912,33 +955,6 @@ function Create_Server_Profile_SY480_Gen10_ESX_SAN_Boot
 }
 
 
-function Add_Users
-{
-    Write-Output "Adding New Users" | Timestamp
-
-    New-HPOVUser -UserName BackupAdmin -FullName "Backup Administrator" -Password BackupPasswd -Roles "Backup Administrator" -EmailAddress "backup@hpe.com" -OfficePhone "(111) 111-1111" -MobilePhone "(999) 999-9999"
-    New-HPOVUser -UserName NetworkAdmin -FullName "Network Administrator" -Password NetworkPasswd -Roles "Network Administrator" -EmailAddress "network@hpe.com" -OfficePhone "(222) 222-2222" -MobilePhone "(888) 888-8888"
-    New-HPOVUser -UserName ServerAdmin -FullName "Server Administrator" -Password ServerPasswd -Roles "Server Administrator" -EmailAddress "server@hpe.com" -OfficePhone "(333) 333-3333" -MobilePhone "(777) 777-7777"
-    New-HPOVUser -UserName StorageAdmin -FullName "Storage Administrator" -Password StoragePasswd -Roles "Storage Administrator" -EmailAddress "storage@hpe.com" -OfficePhone "(444) 444-4444" -MobilePhone "(666) 666-6666"
-    New-HPOVUser -UserName SoftwareAdmin -FullName "Software Administrator" -Password SoftwarePasswd -Roles "Software Administrator" -EmailAddress "software@hpe.com" -OfficePhone "(555) 555-5555" -MobilePhone "(123) 234-3456"
-
-    Write-Output "All New Users Added" | Timestamp
-}
-
-
-function Add_Scopes
-{
-    Write-Output "Adding New Scopes" | Timestamp
-
-    New-HPOVScope -Name FinanceScope -Description "Finance Scope of Resources"
-    $Resources += Get-HPOVNetwork -Name Prod*
-    $Resources += Get-HPOVEnclosure -Name Synergy-Encl-1
-    Get-HPOVScope -Name FinanceScope | Add-HPOVResourceToScope -InputObject $Resources
-
-    Write-Output "All New Scopes Added" | Timestamp
-}
-
-
 ##############################################################################
 #
 # Main Program
@@ -1026,7 +1042,7 @@ Write-Output "Configuring HPE Synergy Appliance" | Timestamp
 #Configure_StoreVirtual_Storage
 
 ### Working up to Here
-Add_Users
+Add_Users_and_Groups
 
 #Create_OS_Deployment_Server
 #Create_Logical_Interconnect_Groups

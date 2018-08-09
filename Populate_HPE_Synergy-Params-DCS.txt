@@ -165,3 +165,18 @@ StoreVirtSVTCapacity        =   100,                    200,                    
 StoreVirtSVTStoragePool     =   Cluster-1,              Cluster-2,              Cluster-3
 StoreVirtSVTProvisionType   =   Thin,                   Thin,                   Thin
 StoreVirtSVTShared          =   True,                   False,                  True
+
+#
+# Users
+#
+SynUserName                 =   BackupAdmin,                NetworkAdmin,               ServerAdmin,                StorageAdmin,               SoftwareAdmin
+SynUserFullName             =   Backup Administrator,       Network Administrator,      Server Administrator,       Storage Administrator,      Software Administrator
+SynUserPassword             =   BackupPasswd,               NetworkPasswd,              ServerPasswd,               StoragePasswd,              SoftwarePasswd
+SynUserRoles                =   Backup Administrator,       Network Administrator,      Server Administrator,       Storage Administrator,      Software Administrator
+SynUserEmail                =   backupadmin@hpe.com,        networkadmin@hpe.com,       serveradmin@hpe.com,        storageadmin@hpe.com,       softwareadmin@hpe.com
+SynUserOfficePhone          =   (111) 111-1111,             (222) 222-2222,             (333) 333-3333,             (444) 444-4444,             (555) 555-5555
+SynUserMobilePhone          =   (666) 666-6666,             (777) 777-7777,             (888) 888-8888,             (999) 999-9999,             (123) 234-3456
+
+#
+# Groups
+#
