@@ -147,3 +147,21 @@ SANManagerSNMPPrivProtocol  =   aes-128,            aes-128
 3PARVolStoragePool          =   FST_CPG1,               FST_CPG1,               CPG-SSD
 3PARVolSnapStoragePool      =   FST_CPG2,               FST_CPG2,               FST_CPG1
 3PARVolShared               =   False,                  True,                   True
+
+#
+# StoreVirtual Storage Systems
+#
+StoreVirtualHostName        =   172.18.30.1,            172.18.30.2,            172.18.30.3
+StoreVirtualNetworkName     =   SVCluster-1,            SVCluster-2,            SVCluster-3
+StoreVirtualUserName        =   dcs,                    dcs,                    dcs
+StoreVirtualPassword        =   dcs,                    dcs,                    dcs
+
+#
+# StoreVirtual Storage Volume Templates
+#
+StoreVirtSVTName            =   SVT-StoreVirt-1,        SVT-StoreVirt-2,        SVT-StoreVirt-3
+StoreVirtSVTStorageSystem   =   Cluster-1,              Cluster-2,              Cluster-3
+StoreVirtSVTCapacity        =   100,                    200,                    300
+StoreVirtSVTStoragePool     =   Cluster-1,              Cluster-2,              Cluster-3
+StoreVirtSVTProvisionType   =   Thin,                   Thin,                   Thin
+StoreVirtSVTShared          =   True,                   False,                  True

@@ -481,17 +481,54 @@ function Configure_StoreVirtual_Storage
 {
     Write-Output "Adding StoreVirtual Storage Systems" | Timestamp
 
-    $SVNet1 = Get-HPOVNetwork -Name SVCluster-1 -ErrorAction Stop
-    Add-HPOVStorageSystem -Hostname 172.18.30.1 -Family StoreVirtual -Password dcs -Username dcs -VIPS @{ "172.18.30.1" = $SVNet1 } | Wait-HPOVTaskComplete
-    $SVNet2 = Get-HPOVNetwork -Name SVCluster-2 -ErrorAction Stop
-    Add-HPOVStorageSystem -Hostname 172.18.30.2 -Family StoreVirtual -Password dcs -Username dcs -VIPS @{ "172.18.30.2" = $SVNet2 } | Wait-HPOVTaskComplete
-    $SVNet3 = Get-HPOVNetwork -Name SVCluster-3 -ErrorAction Stop
-    Add-HPOVStorageSystem -Hostname 172.18.30.3 -Family StoreVirtual -Password dcs -Username dcs -VIPS @{ "172.18.30.3" = $SVNet3 } | Wait-HPOVTaskComplete
+    [array]$SVHostName              = $StoreVirtualHostName.split(",").Trim()
+    [array]$SVNetworkName           = $StoreVirtualNetworkName.split(",").Trim()
+    [array]$SVUserName              = $StoreVirtualUserName.split(",").Trim()
+    [array]$SVPassword              = $StoreVirtualPassword.split(",").Trim()
+
+    if ($SVHostName)
+    {
+        for ($i = 0; $i -le ($SVHostName.Length -1); $i += 1)
+        {
+            $SVNet =                    Get-HPOVNetwork -Name $SVNetworkName[$i]
+            Add-HPOVStorageSystem       -Hostname $SVHostName[$i]                       `
+                                        -Family StoreVirtual                            `
+                                        -Username $SVUserName[$i]                       `
+                                        -Password $SVPassword[$i]                       `
+                                        -VIPS @{ $SVHostName[$i] = $SVNet }
+        }
+    }
 
     Write-Output "Adding StoreVirtual Storage Volume Templates" | Timestamp
-    New-HPOVStorageVolumeTemplate -Capacity 100 -Name SVT-StoreVirt-1 -ProvisionType Thin -StoragePool Cluster-1 -Shared -StorageSystem Cluster-1
-    New-HPOVStorageVolumeTemplate -Capacity 100 -Name SVT-StoreVirt-2 -ProvisionType Thin -StoragePool Cluster-2 -Shared -StorageSystem Cluster-2
-    New-HPOVStorageVolumeTemplate -Capacity 100 -Name SVT-StoreVirt-3 -ProvisionType Thin -StoragePool Cluster-3 -Shared -StorageSystem Cluster-3
+
+    [array]$SVSVTName               = $StoreVirtSVTName.split(",").Trim()
+    [array]$SVSVTSystem             = $StoreVirtSVTStorageSystem.split(",").Trim()
+    [array]$SVSVTCapacity           = $StoreVirtSVTCapacity.split(",").Trim()
+    [array]$SVSVTStoragePool        = $StoreVirtSVTStoragePool.split(",").Trim()
+    [array]$SVSVTProvisionType      = $StoreVirtSVTProvisionType.split(",").Trim()
+    [array]$SVSVTShared             = $StoreVirtSVTShared.split(",").Trim()
+
+    if ($SVSVTName)
+    {
+        for ($i = 0; $i -le ($SVSVTName.Length -1); $i += 1)
+        {
+            if ($SVSVTShared[$i] -eq "True")
+            {
+                New-HPOVStorageVolumeTemplate   -Name $SVSVTName[$i]                        `
+                                                -StorageSystem $SVSVTSystem[$i]             `
+                                                -Capacity $SVSVTCapacity[$i]                `
+                                                -StoragePool $SVSVTStoragePool[$i]          `
+                                                -ProvisionType $SVSVTProvisionType[$i]      `
+                                                -Shared    
+            } else {
+                New-HPOVStorageVolumeTemplate   -Name $SVSVTName[$i]                        `
+                                                -StorageSystem $SVSVTSystem[$i]             `
+                                                -Capacity $SVSVTCapacity[$i]                `
+                                                -StoragePool $SVSVTStoragePool[$i]          `
+                                                -ProvisionType $SVSVTProvisionType[$i]
+            }
+        }
+    }
 
     Write-Output "StoreVirtual Configuration Complete" | Timestamp
 }
@@ -986,11 +1023,11 @@ Write-Output "Configuring HPE Synergy Appliance" | Timestamp
 #Configure_FCoE_Networks
 #Configure_Network_Sets
 #Configure_3PAR_Storage
-
-### Working up to Here
 #Configure_StoreVirtual_Storage
 
-#Add_Users
+### Working up to Here
+Add_Users
+
 #Create_OS_Deployment_Server
 #Create_Logical_Interconnect_Groups
 #Create_Uplink_Sets
