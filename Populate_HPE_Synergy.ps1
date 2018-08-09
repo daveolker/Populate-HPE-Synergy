@@ -96,15 +96,15 @@ function Configure_SAN_Managers
 {
     Write-Output "Configuring SAN Managers" | Timestamp
 
-    [array]$SMHostNames         = $SANManagerHostNames.split(",")
-    [array]$SMType              = $SANManagerType.split(",")
-    [array]$SMPort              = $SANManagerPort.split(",")
-    [array]$SMSNMPAuthProtocol  = $SANManagerSNMPAuthProtocol.split(",")
-    [array]$SMSNMPUser          = $SANManagerSNMPUser.split(",")
-    [array]$SMSNMPAuthLevel     = $SANManagerSNMPAuthLevel.split(",")
-    [array]$SMSNMPAuthPassword  = $SANManagerSNMPAuthPassword.split(",")
-    [array]$SMSNMPPrivPassword  = $SANManagerSNMPPrivPassword.split(",")
-    [array]$SMSNMPPrivProtocol  = $SANManagerSNMPPrivProtocol.split(",")
+    [array]$SMHostNames         = $SANManagerHostNames.split(",").Trim()
+    [array]$SMType              = $SANManagerType.split(",").Trim()
+    [array]$SMPort              = $SANManagerPort.split(",").Trim()
+    [array]$SMSNMPAuthProtocol  = $SANManagerSNMPAuthProtocol.split(",").Trim()
+    [array]$SMSNMPUser          = $SANManagerSNMPUser.split(",").Trim()
+    [array]$SMSNMPAuthLevel     = $SANManagerSNMPAuthLevel.split(",").Trim()
+    [array]$SMSNMPAuthPassword  = $SANManagerSNMPAuthPassword.split(",").Trim()
+    [array]$SMSNMPPrivPassword  = $SANManagerSNMPPrivPassword.split(",").Trim()
+    [array]$SMSNMPPrivProtocol  = $SANManagerSNMPPrivProtocol.split(",").Trim()
 
     if ($SMHostNames)
     {
@@ -136,7 +136,7 @@ function Configure_Networks
 {
     Write-Output "Adding IPv4 Prod Subnet" | Timestamp
 
-    [array]$ProdDNS                 = $ProdNetDNSServers.split(",")
+    [array]$ProdDNS                 = $ProdNetDNSServers.split(",").Trim()
     New-HPOVAddressPoolSubnet       -Domain $ProdNetDomain          `
                                     -Gateway $ProdNetGateway        `
                                     -NetworkId $ProdNetSubnet       `
@@ -150,7 +150,7 @@ function Configure_Networks
 
     Write-Output "Adding IPv4 Deployment Subnet" | Timestamp
 
-    [array]$DeployDNS               = $DeployNetDNSServers.split(",")
+    [array]$DeployDNS               = $DeployNetDNSServers.split(",").Trim()
     New-HPOVAddressPoolSubnet       -Domain $DeployNetDomain        `
                                     -Gateway $DeployNetGateway      `
                                     -NetworkId $DeployNetSubnet     `
@@ -236,8 +236,8 @@ function Add_Storage
 function Rename_Enclosures
 {
     Write-Output "Renaming Enclosures" | Timestamp
-    [array]$EncSerialNums = $EnclosureSerialNumbers.split(",")
-    [array]$EncNames      = $EnclosureNames.split(",")
+    [array]$EncSerialNums = $EnclosureSerialNumbers.split(",").Trim()
+    [array]$EncNames      = $EnclosureNames.split(",").Trim()
 
     if ($EncSerialNums)
     {
@@ -710,7 +710,7 @@ function Configure_Time_and_Locale
 
     if ($NTPServers)
     {
-        Set-HPOVApplianceDateTime -Locale $Locale -NTPServers $NTPServers -PollingInterval 60
+        Set-HPOVApplianceDateTime -Locale $Locale -NTPServers $NTPServers -PollingInterval $NTPPollingInterval
     }
 
     Write-Output "Time and Locale Configured" | Timestamp
@@ -780,7 +780,7 @@ New-Variable -Name config_file -Value .\Populate_HPE_Synergy-Params-DCS.txt -Sco
 if (Test-Path $config_file) {
     Get-Content $config_file | Where-Object { $_ -and !$_.StartsWith("#") } | Foreach-Object {
         $var = $_.Split('=')
-        New-Variable -Name $var[0] -Value $var[1] -Scope Global -Force
+        New-Variable -Name $var[0].Trim() -Value $var[1].Trim() -Scope Global -Force
     }
 } else {
     Write-Output "Configuration file '$config_file' not found.  Exiting." | Timestamp
