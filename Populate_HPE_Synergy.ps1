@@ -560,7 +560,11 @@ function Add_Users_and_Groups
         }
     }
 
-    Write-Output "All Users Added" | Timestamp
+    #
+    # Add LDAP Groups after adding logic to configure LDAP Directory Servers
+    #
+    
+    Write-Output "All Users and Groups Added" | Timestamp
 }
 
 
@@ -568,10 +572,30 @@ function Add_Scopes
 {
     Write-Output "Adding New Scopes" | Timestamp
 
-    New-HPOVScope -Name FinanceScope -Description "Finance Scope of Resources"
-    $Resources += Get-HPOVNetwork -Name Prod*
-    $Resources += Get-HPOVEnclosure -Name Synergy-Encl-1
-    Get-HPOVScope -Name FinanceScope | Add-HPOVResourceToScope -InputObject $Resources
+    [array]$ScopeName               = $SynScopeName.split(",").Trim()
+    [array]$ScopeDescription        = $SynScopeDescription.split(",").Trim()
+    [array]$ScopeResources          = $SynScopeResources.split(",").Trim()
+
+    if ($ScopeName)
+    {
+        for ($i = 0; $i -le ($ScopeName.Length -1); $i += 1)
+        {
+            New-HPOVScope           -Name $ScopeName[$i]                 `
+                                    -Description $ScopeDescription[$i]
+            
+            if ($ScopeResources[$i])
+            {
+                $CommandList        = $ScopeResources[$i].Split('|')
+
+                foreach ($Command in $CommandList) {
+                    $ResourceList   += Invoke-Expression $Command
+                }
+                
+                Get-HPOVScope       -Name $ScopeName[$i] |              `
+                    Add-HPOVResourceToScope -InputObject $ResourceList
+            }
+        }
+    }
 
     Write-Output "All New Scopes Added" | Timestamp
 }
@@ -1040,16 +1064,16 @@ Write-Output "Configuring HPE Synergy Appliance" | Timestamp
 #Configure_Network_Sets
 #Configure_3PAR_Storage
 #Configure_StoreVirtual_Storage
+#Add_Users_and_Groups
+#Add_Scopes
 
 ### Working up to Here
-Add_Users_and_Groups
+Create_OS_Deployment_Server
 
-#Create_OS_Deployment_Server
 #Create_Logical_Interconnect_Groups
 #Create_Uplink_Sets
 #Create_Enclosure_Group
 #Create_Logical_Enclosure
-#Add_Scopes
 #Create_Server_Profile_Template_SY480_Gen9_RHEL_Local_Boot
 #Create_Server_Profile_Template_SY660_Gen9_Windows_SAN_Storage
 #Create_Server_Profile_Template_SY480_Gen9_ESX_SAN_Boot

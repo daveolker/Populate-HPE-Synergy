@@ -178,5 +178,12 @@ SynUserOfficePhone          =   (111) 111-1111,             (222) 222-2222,     
 SynUserMobilePhone          =   (666) 666-6666,             (777) 777-7777,             (888) 888-8888,             (999) 999-9999,             (123) 234-3456
 
 #
-# Groups
+# LDAP Groups
 #
+
+#
+# Scopes
+#
+SynScopeName                =   FinanceScope
+SynScopeDescription         =   Finance Scope of Resources
+SynScopeResources           =   Get-HPOVNetwork -Name Prod*|Get-HPOVEnclosure -Name Synergy-Enc-1
