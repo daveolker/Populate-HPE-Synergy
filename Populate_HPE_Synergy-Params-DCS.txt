@@ -187,3 +187,12 @@ SynUserMobilePhone          =   (666) 666-6666,             (777) 777-7777,     
 SynScopeName                =   FinanceScope
 SynScopeDescription         =   Finance Scope of Resources
 SynScopeResources           =   Get-HPOVNetwork -Name Prod*|Get-HPOVEnclosure -Name Synergy-Enc-1
+
+#
+# OS Deployment Server Configuration
+#
+OSDeploymentNetwork         =   Mgmt
+OSDeploymentName            =   LE1 Image Streamer
+OSDeploymentDescription     =   Image Streamer for Logical Enclosure 1
+OSDeploymentEnclosure       =   Synergy-Enc-3
+OSDeploymentAppliance       =   appliance 2

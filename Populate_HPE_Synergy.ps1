@@ -601,6 +601,35 @@ function Add_Scopes
 }
 
 
+function Create_OS_Deployment_Server
+{
+    Write-Output "Configuring OS Deployment Servers" | Timestamp
+
+    [array]$DeployName              = $OSDeploymentName.split(",").Trim()
+    [array]$DeployNetwork           = $OSDeploymentNetwork.split(",").Trim()
+    [array]$DeployDesc              = $OSDeploymentDescription.split(",").Trim()
+    [array]$DeployEnc               = $OSDeploymentEnclosure.split(",").Trim()
+    [array]$DeployApp               = $OSDeploymentAppliance.split(",").Trim()
+
+    if ($DeployName)
+    {
+        for ($i = 0; $i -le ($DeployName.Length -1); $i += 1)
+        {
+            $MgmtNetwork = Get-HPOVNetwork  -Type Ethernet                              `
+                                            -Name $DeployNetwork[$i]
+            
+            Get-HPOVImageStreamerAppliance  -Name "$DeployEnc[$i], $DeployApp[$i]" |    `
+                New-HPOVOSDeploymentServer  -Name $DeployName[$i]                       `
+                                            -ManagementNetwork $MgmtNetwork             `
+                                            -Description $DeployDesc[$i] |              `
+                                            Wait-HPOVTaskComplete
+        }
+    }
+
+    Write-Output "OS Deployment Servers Configured" | Timestamp
+}
+
+
 function Create_Uplink_Sets
 {
     Write-Output "Adding Fibre Channel and FCoE Uplink Sets" | Timestamp
@@ -700,15 +729,6 @@ function Create_Logical_Interconnect_Groups_Remote
     New-HPOVLogicalInterconnectGroup -Name "LIG-FlexFabric-Remote-1" -FrameCount 2 -InterconnectBaySet 2 -FabricModuleType "SEVC40F8" -Bays @{Frame1 = @{Bay2 = "SEVC40f8" ; Bay5 = "SE20ILM"};Frame2 = @{Bay2 = "SE20ILM"; Bay5 = "SEVC40F8" }} -FabricRedundancy "HighlyAvailable"
     New-HPOVLogicalInterconnectGroup -Name "LIG-FlexFabric-Remote-2" -FrameCount 2 -InterconnectBaySet 3 -FabricModuleType "SEVC40F8" -Bays @{Frame1 = @{Bay3 = "SEVC40f8" ; Bay6 = "SE20ILM"};Frame2 = @{Bay3 = "SE20ILM"; Bay6 = "SEVC40F8" }} -FabricRedundancy "HighlyAvailable"
     Write-Output "Logical Interconnect Groups Created" | Timestamp
-}
-
-
-function Create_OS_Deployment_Server
-{
-    Write-Output "Configuring OS Deployment Servers" | Timestamp
-    $ManagementNetwork = Get-HPOVNetwork -Type Ethernet -Name "Mgmt"
-    Get-HPOVImageStreamerAppliance | Select-Object -First 1 | New-HPOVOSDeploymentServer -Name "LE1 Image Streamer" -ManagementNetwork $ManagementNetwork -Description "Image Streamer for Logical Enclosure 1" | Wait-HPOVTaskComplete
-    Write-Output "OS Deployment Server Configured" | Timestamp
 }
 
 
@@ -1066,11 +1086,11 @@ Write-Output "Configuring HPE Synergy Appliance" | Timestamp
 #Configure_StoreVirtual_Storage
 #Add_Users_and_Groups
 #Add_Scopes
+#Create_OS_Deployment_Server
 
 ### Working up to Here
-Create_OS_Deployment_Server
+Create_Logical_Interconnect_Groups
 
-#Create_Logical_Interconnect_Groups
 #Create_Uplink_Sets
 #Create_Enclosure_Group
 #Create_Logical_Enclosure
