@@ -33,13 +33,35 @@ DeployNetDNSServers         =
 #
 # Ethernet Network Settings
 #
-ENetworkName                =   ESX Mgmt,     ESX vMotion,     Prod_1101,     Prod_1102,     Prod_1103,     Prod_1104,     Deployment,     Mgmt,         SVCluster-1,     SVCluster-2,     SVCluster-3
-ENetworkType                =   Ethernet,     Ethernet,        Ethernet,      Ethernet,      Ethernet,      Ethernet,      Ethernet,       Ethernet,     Ethernet,        Ethernet,        Ethernet
-ENetworkPurpose             =   Management,   VMMigration,     General,       General,       General,       General,       General,        Management,   ISCSI,           ISCSI,           ISCSI
-ENetworkMaxBandwidth        =   20000,        20000,           20000,         20000,         20000,         20000,         20000,          20000,        20000,           20000,           20000
-ENetworkTypicalBandwidth    =   2500,         2500,            2500,          2500,          2500,          2500,          2500,           2500,         2500,            2500,            2500
-ENetworkVlanID              =   1131,         1132,            1101,          1102,          1103,          1104,          1500,           100,          301,             302,             303
-ENetworkVlanType            =   Tagged,       Tagged,          Tagged,        Tagged,        Tagged,        Tagged,        Tagged,         Tagged,       Tagged,          Tagged,          Tagged
+ENetworkName                =   ESX Mgmt,       ESX vMotion,    Prod_1101,      Prod_1102,      Prod_1103,      Prod_1104,      Deployment,     Mgmt,           SVCluster-1,        SVCluster-2,        SVCluster-3
+ENetworkType                =   Ethernet,       Ethernet,       Ethernet,       Ethernet,       Ethernet,       Ethernet,       Ethernet,       Ethernet,       Ethernet,           Ethernet,           Ethernet
+ENetworkPurpose             =   Management,     VMMigration,    General,        General,        General,        General,        General,        Management,     ISCSI,              ISCSI,              ISCSI
+ENetworkMaxBandwidth        =   20000,          20000,          20000,          20000,          20000,          20000,          20000,          20000,          20000,              20000,              20000
+ENetworkTypicalBandwidth    =   2500,           2500,           2500,           2500,           2500,           2500,           2500,           2500,           2500,               2500,               2500
+ENetworkVlanID              =   1131,           1132,           1101,           1102,           1103,           1104,           1500,           100,            301,                302,                303
+ENetworkVlanType            =   Tagged,         Tagged,         Tagged,         Tagged,         Tagged,         Tagged,         Tagged,         Tagged,         Tagged,             Tagged,             Tagged
+
+#
+# Fibre Channel Network Settings
+#
+FCNetworkName               =   SAN A FC,       SAN B FC
+FCNetworkType               =   Fibre Channel,  Fibre Channel
+FCNetworkFabricType         =   FabricAttach,   FabricAttach
+FCNetworkLinkStabilityTime  =   30,             30
+FCNetworkManagedSAN         =   VSAN20,         VSAN21
+FCNetworkMaxBandwidth       =   20000,          20000
+FCNetworkTypicalBandwidth   =   8000,           8000
+FCNetworkAutoLogin          =   1,
+
+#
+# Fibre Channel over Ethernet Network Settings
+#
+FCoENetworkName             =   SAN A FCoE,     SAN B FCoE
+FCoENetworkType             =   FCoE,           FCoE
+FCoENetworkVlanID           =   10,             11
+FCoENetworkManagedSAN       =   VSAN10,         VSAN11
+FCoENetworkMaxBandwidth     =   20000,          20000
+FCoENetworkTypicalBandwidth =   8000,           8000
 
 #
 # Virtual Address Pool Settings

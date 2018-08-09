@@ -134,6 +134,7 @@ function Configure_SAN_Managers
 
 function Configure_Networks
 {
+    <#
     Write-Output "Adding IPv4 Prod Subnet" | Timestamp
     [array]$ProdDNS                 = $ProdNetDNSServers.split(",").Trim()
     New-HPOVAddressPoolSubnet       -Domain $ProdNetDomain          `
@@ -160,7 +161,7 @@ function Configure_Networks
                                     -Start $DeployNetPoolStart      `
                                     -End $DeployNetPoolEnd
 
-    Write-Output "Adding Ethernet Networks" | Timestamp    
+    Write-Output "Adding Ethernet Networks" | Timestamp
     [array]$NetName             = $ENetworkName.split(",").Trim()
     [array]$NetType             = $ENetworkType.split(",").Trim()
     [array]$NetPurpose          = $ENetworkPurpose.split(",").Trim()
@@ -183,16 +184,59 @@ function Configure_Networks
         }
     }
 
-    
-    $Deploy_AddrPool = Get-HPOVAddressPoolSubnet -NetworkId $deploy_subnet
-    Get-HPOVNetwork -Name Deployment | Set-HPOVNetwork -IPv4Subnet $Deploy_AddrPool
-    $Prod_AddrPool = Get-HPOVAddressPoolSubnet -NetworkId $prod_subnet
-    Get-HPOVNetwork -Name Mgmt | Set-HPOVNetwork -IPv4Subnet $Prod_AddrPool
+    $Prod_AddrPool = Get-HPOVAddressPoolSubnet -NetworkId $ProdNetSubnet
+    Get-HPOVNetwork -Name $ProdNetName | Set-HPOVNetwork -IPv4Subnet $Prod_AddrPool
 
-    New-HPOVNetwork -Name "SAN A FC" -Type "Fibre Channel" -FabricType FabricAttach -LinkStabilityTime 30 -ManagedSan VSAN20 -MaximumBandwidth 20000 -TypicalBandwidth 8000
-    New-HPOVNetwork -Name "SAN B FC" -Type "Fibre Channel" -FabricType FabricAttach -LinkStabilityTime 30 -ManagedSan VSAN21 -MaximumBandwidth 20000 -TypicalBandwidth 8000
-    New-HPOVNetwork -Name "SAN A FCoE" -VlanId 10 -ManagedSan VSAN10 -MaximumBandwidth 20000 -Type FCoE -TypicalBandwidth 8000
-    New-HPOVNetwork -Name "SAN B FCoE" -VlanId 11 -ManagedSan VSAN11 -MaximumBandwidth 20000 -Type FCoE -TypicalBandwidth 8000
+    $Deploy_AddrPool = Get-HPOVAddressPoolSubnet -NetworkId $DeployNetSubnet
+    Get-HPOVNetwork -Name $DeployNetName | Set-HPOVNetwork -IPv4Subnet $Deploy_AddrPool
+
+    Write-Output "Adding Fibre Channel Networks" | Timestamp
+    [array]$FCNetName               = $FCNetworkName.split(",").Trim()
+    [array]$FCNetType               = $FCNetworkType.split(",").Trim()
+    [array]$FCNetFabricType         = $FCNetworkFabricType.split(",").Trim()
+    [array]$FCNetLinkStabilityTime  = $FCNetworkLinkStabilityTime.split(",").Trim()
+    [array]$FCNetManagedSAN         = $FCNetworkManagedSAN.split(",").Trim()
+    [array]$FCNetMaxBandwidth       = $FCNetworkMaxBandwidth.split(",").Trim()
+    [array]$FCNetTypicalBandwidth   = $FCNetworkTypicalBandwidth.split(",").Trim()
+    [array]$FCNetAutoLogin          = $FCNetworkAutoLogin.split(",").Trim()
+
+    if ($FCNetName)
+    {
+        for ($i = 0; $i -le ($FCNetName.Length -1); $i += 1)
+        {
+            $FCAutoLogin        = [bool]$FCNetAutoLogin[$i]
+            New-HPOVNetwork     -Name $FCNetName[$i]                                `
+                                -Type $FCNetType[$i]                                `
+                                -FabricType $FCNetFabricType[$i]                    `
+                                -LinkStabilityTime $FCNetLinkStabilityTime[$i]      `
+                                -ManagedSan $FCNetManagedSAN[$i]                    `
+                                -MaximumBandwidth $FCNetMaxBandwidth[$i]            `
+                                -TypicalBandwidth $FCNetTypicalBandwidth[$i]        `
+                                -AutoLoginRedistribution $FCAutoLogin
+        }
+    }
+    #>
+    
+    Write-Output "Adding Fibre Channel over Ethernet Networks" | Timestamp
+    [array]$FCoENetName             = $FCoENetworkName.split(",").Trim()
+    [array]$FCoENetType             = $FCoENetworkType.split(",").Trim()
+    [array]$FCoEVlanID              = $FCoENetworkVlanID.split(",").Trim()
+    [array]$FCoEManagedSAN          = $FCoENetworkManagedSAN.split(",").Trim()
+    [array]$FCoEMaxBandwidth        = $FCoENetworkMaxBandwidth.split(",").Trim()
+    [array]$FCoETypicalBandwidth    = $FCoENetworkTypicalBandwidth.split(",").Trim()
+
+    if ($FCoENetName)
+    {
+        for ($i = 0; $i -le ($FCoENetName.Length -1); $i += 1)
+        {
+            New-HPOVNetwork     -Name $FCoENetName[$i]                          `
+                                -Type $FCoENetType[$i]                          `
+                                -VlanId $FCoEVlanID[$i]                         `
+                                -ManagedSan $FCoEManagedSAN[$i]                 `
+                                -MaximumBandwidth $FCoEMaxBandwidth[$i]         `
+                                -TypicalBandwidth $FCoETypicalBandwidth[$i]
+        }
+    }
 
     Write-Output "Adding Network Sets" | Timestamp
     New-HPOVNetworkSet -Name Prod -Networks Prod_1101, Prod_1102, Prod_1103, Prod_1104 -MaximumBandwidth 20000 -TypicalBandwidth 2500
