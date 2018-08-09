@@ -379,39 +379,99 @@ function Configure_3PAR_Storage
 {
     Write-Output "Adding 3PAR Storage Systems" | Timestamp
 
-    [array]$3PARName                = $3PARStorageName.split(",").Trim()
+    [array]$3PARHostName            = $3PARStorageHostName.split(",").Trim()
+    [array]$3PARSystemName          = $3PARStorageSystemName.split(",").Trim()
     [array]$3PARDomain              = $3PARStorageDomain.split(",").Trim()
     [array]$3PARUser                = $3PARStorageUser.split(",").Trim()
     [array]$3PARPassword            = $3PARStoragePassword.split(",").Trim()
+    [array]$3PARStoragePools        = $3PARStoragePools.split(",").Trim()
 
-    if ($3PARName)
+    if ($3PARHostName)
     {
-        for ($i = 0; $i -le ($3PARName.Length -1); $i += 1)
+        for ($i = 0; $i -le ($3PARHostName.Length -1); $i += 1)
         {
-            Add-HPOVStorageSystem   -Hostname $3PARName[$i]         `
-                                    -Domain $3PARDomain[$i]         `
-                                    -Username $3PARUser[$i]         `
+            Add-HPOVStorageSystem   -Hostname $3PARHostName[$i]         `
+                                    -Domain $3PARDomain[$i]             `
+                                    -Username $3PARUser[$i]             `
                                     -Password $3PARPassword[$i]
         }
     }
     
-    Exit
-
-    Write-Output "Adding 3PAR Storage Pools" | Timestamp
-    $StoragePools = "CPG-SSD", "CPG-SSD-AO", "CPG_FC-AO", "FST_CPG1", "FST_CPG2"
-    Add-HPOVStoragePool -StorageSystem ThreePAR-1 $StoragePools | Wait-HPOVTaskComplete
-    Add-HPOVStoragePool -StorageSystem ThreePAR-2 $StoragePools | Wait-HPOVTaskComplete
+    if ($3PARStoragePools)
+    {
+        for ($i = 0; $i -le ($3PARStoragePools.Length -1); $i += 1)
+        {
+            Add-HPOVStoragePool     -StorageSystem $3PARSystemName[$i]  `
+                                    $3PARStoragePools[$i].Split('|')
+        }
+    }
 
     Write-Output "Adding 3PAR Storage Volume Templates" | Timestamp
-    New-HPOVStorageVolumeTemplate -Capacity 100 -Name SVT-3PAR-Shared-1 -ProvisionType Thin -StoragePool CPG-SSD -Shared -SnapshotStoragePool CPG-SSD -StorageSystem ThreePAR-1
-    New-HPOVStorageVolumeTemplate -Capacity 100 -Name SVT-3PAR-Shared-2 -ProvisionType Thin -StoragePool CPG-SSD -Shared -SnapshotStoragePool CPG-SSD -StorageSystem ThreePAR-2
-    New-HPOVStorageVolumeTemplate -Capacity 100 -Name SVT-Demo-Shared-TPDD-1 -ProvisionType TPDD -StoragePool CPG-SSD -Shared -SnapshotStoragePool CPG-SSD -StorageSystem ThreePAR-1
-    New-HPOVStorageVolumeTemplate -Capacity 100 -Name SVT-Demo-Shared-TPDD-2 -ProvisionType TPDD -StoragePool CPG-SSD -Shared -SnapshotStoragePool CPG-SSD -StorageSystem ThreePAR-2
+
+    [array]$3PSVTName               = $3PARSVTName.split(",").Trim()
+    [array]$3PSVTSystem             = $3PARSVTStorageSystem.split(",").Trim()
+    [array]$3PSVTCapacity           = $3PARSVTCapacity.split(",").Trim()
+    [array]$3PSVTStoragePool        = $3PARSVTStoragePool.split(",").Trim()
+    [array]$3PSVTSnapPool           = $3PARSVTSnapStoragePool.split(",").Trim()
+    [array]$3PSVTShared             = $3PARSVTShared.split(",").Trim()
+    [array]$3PSVTDeDupe             = $3PARSVTDeDupe.split(",").Trim()
+
+    if ($3PSVTName)
+    {
+        for ($i = 0; $i -le ($3PSVTName.Length -1); $i += 1)
+        {
+            $DeDupe                 = [bool]$3PSVTDeDupe[$i]
+
+            if ($3PSVTShared[$i] -eq "True")
+            {
+                New-HPOVStorageVolumeTemplate   -Name $3PSVTName[$i]                        `
+                                                -StorageSystem $3PSVTSystem[$i]             `
+                                                -Capacity $3PSVTCapacity[$i]                `
+                                                -StoragePool $3PSVTStoragePool[$i]          `
+                                                -SnapshotStoragePool $3PSVTSnapPool[$i]     `
+                                                -EnableDeduplication $DeDupe                `
+                                                -Shared    
+            } else {
+                New-HPOVStorageVolumeTemplate   -Name $3PSVTName[$i]                        `
+                                                -StorageSystem $3PSVTSystem[$i]             `
+                                                -Capacity $3PSVTCapacity[$i]                `
+                                                -StoragePool $3PSVTStoragePool[$i]          `
+                                                -SnapshotStoragePool $3PSVTSnapPool[$i]     `
+                                                -EnableDeduplication $DeDupe
+            }
+        }
+    }
 
     Write-Output "Adding 3PAR Storage Volumes" | Timestamp
-    New-HPOVStorageVolume -Capacity 200 -Name Demo-Volume-1 -StoragePool FST_CPG1 -SnapshotStoragePool FST_CPG1 -StorageSystem ThreePAR-1 | Wait-HPOVTaskComplete
-    New-HPOVStorageVolume -Capacity 200 -Name Shared-Volume-1 -StoragePool FST_CPG1 -SnapshotStoragePool FST_CPG1 -Shared -StorageSystem ThreePAR-2 | Wait-HPOVTaskComplete
-    New-HPOVStorageVolume -Capacity 200 -Name Shared-Volume-2 -StoragePool FST_CPG1 -SnapshotStoragePool FST_CPG1 -Shared -StorageSystem ThreePAR-2 | Wait-HPOVTaskComplete
+
+    [array]$3PVolName               = $3PARVolName.split(",").Trim()
+    [array]$3PVolSystem             = $3PARVolStorageSystem.split(",").Trim()
+    [array]$3PVolCapacity           = $3PARVolCapacity.split(",").Trim()
+    [array]$3PVolStoragePool        = $3PARVolStoragePool.split(",").Trim()
+    [array]$3PVolSnapPool           = $3PARVolSnapStoragePool.split(",").Trim()
+    [array]$3PVolShared             = $3PARVolShared.split(",").Trim()
+    
+    if ($3PVolName)
+    {
+        for ($i = 0; $i -le ($3PVolName.Length -1); $i += 1)
+        {
+            if ($3PVolShared[$i] -eq "True")
+            {
+                New-HPOVStorageVolume   -Name $3PVolName[$i]                        `
+                                        -StorageSystem $3PVolSystem[$i]             `
+                                        -Capacity $3PVolCapacity[$i]                `
+                                        -StoragePool $3PVolStoragePool[$i]          `
+                                        -SnapshotStoragePool $3PVolSnapPool[$i]     `
+                                        -Shared
+            } else {
+                New-HPOVStorageVolume   -Name $3PVolName[$i]                        `
+                                        -StorageSystem $3PVolSystem[$i]             `
+                                        -Capacity $3PVolCapacity[$i]                `
+                                        -StoragePool $3PVolStoragePool[$i]          `
+                                        -SnapshotStoragePool $3PVolSnapPool[$i]
+            }
+        }
+    }
 
     Write-Output "3PAR Storage Configuration Complete" | Timestamp
 }
@@ -925,9 +985,9 @@ Write-Output "Configuring HPE Synergy Appliance" | Timestamp
 #Configure_FC_Networks
 #Configure_FCoE_Networks
 #Configure_Network_Sets
+#Configure_3PAR_Storage
 
 ### Working up to Here
-Configure_3PAR_Storage
 #Configure_StoreVirtual_Storage
 
 #Add_Users

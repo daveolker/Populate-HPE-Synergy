@@ -7,7 +7,7 @@
 #
 ##########################################################################
 #
-# Production Network Pool Settings
+# Production Network Pool
 #
 ProdNetName                 =   Mgmt
 ProdNetDomain               =   mgmt.lan
@@ -19,7 +19,7 @@ ProdNetMask                 =   255.255.252.0
 ProdNetDNSServers           =   16.110.135.51,16.110.135.52
 
 #
-# OS Deployment Network Pool Settings
+# OS Deployment Network Pool
 #
 DeployNetName               =   Deployment
 DeployNetDomain             =   deployment.lan
@@ -31,7 +31,7 @@ DeployNetMask               =   255.255.255.0
 DeployNetDNSServers         =
 
 #
-# Ethernet Network Settings
+# Ethernet Networks
 #
 ENetworkName                =   ESX Mgmt,       ESX vMotion,    Prod_1101,      Prod_1102,      Prod_1103,      Prod_1104,      Deployment,     Mgmt,           SVCluster-1,        SVCluster-2,        SVCluster-3
 ENetworkType                =   Ethernet,       Ethernet,       Ethernet,       Ethernet,       Ethernet,       Ethernet,       Ethernet,       Ethernet,       Ethernet,           Ethernet,           Ethernet
@@ -42,7 +42,7 @@ ENetworkVlanID              =   1131,           1132,           1101,           
 ENetworkVlanType            =   Tagged,         Tagged,         Tagged,         Tagged,         Tagged,         Tagged,         Tagged,         Tagged,         Tagged,             Tagged,             Tagged
 
 #
-# Fibre Channel Network Settings
+# Fibre Channel Networks
 #
 FCNetworkName               =   SAN A FC,       SAN B FC
 FCNetworkType               =   Fibre Channel,  Fibre Channel
@@ -54,7 +54,7 @@ FCNetworkTypicalBandwidth   =   8000,           8000
 FCNetworkAutoLogin          =   1,
 
 #
-# Fibre Channel over Ethernet Network Settings
+# Fibre Channel over Ethernet Networks
 #
 FCoENetworkName             =   SAN A FCoE,     SAN B FCoE
 FCoENetworkType             =   FCoE,           FCoE
@@ -64,7 +64,7 @@ FCoENetworkMaxBandwidth     =   20000,          20000
 FCoENetworkTypicalBandwidth =   8000,           8000
 
 #
-# Network Sets Settings
+# Network Sets
 #
 NetworkSetName              =   Prod,                                       ESX
 NetworkSetNetworks          =   Prod_1101|Prod_1102|Prod_1103|Prod_1104,    ESX Mgmt|ESX vMotion
@@ -72,7 +72,7 @@ NetworkSetMaxBandwidth      =   20000,                                      2000
 NetworkSetTypicalBandwidth  =   2500,                                       2500
 
 #
-# Virtual Address Pool Settings
+# Virtual Address Pools
 #
 vMACAddressPoolRangeStart   =   5A:05:41:40:00:00
 vMACAddressPoolRangeEnd     =   5A:05:41:4F:FF:FF
@@ -104,7 +104,7 @@ EnclosureSerialNumbers      =   0000A66101,         0000A66102,         0000A661
 EnclosureNames              =   Synergy-Enc-1,      Synergy-Enc-2,      Synergy-Enc-3
 
 #
-# SAN Manager Settings
+# SAN Managers
 #
 SANManagerHostNames         =   172.18.20.1,        172.18.20.2
 SANManagerType              =   Cisco,              Cisco
@@ -119,7 +119,31 @@ SANManagerSNMPPrivProtocol  =   aes-128,            aes-128
 #
 # 3PAR Storage Systems
 #
-3PARStorageName             =   172.18.11.11,       172.18.11.12
-3PARStorageDomain           =   TestDomain,         TestDomain
-3PARStorageUser             =   dcs,                dcs
-3PARStoragePassword         =   dcs,                dcs
+3PARStorageHostName         =   172.18.11.11,                                       172.18.11.12
+3PARStorageSystemName       =   ThreePAR-1,                                         ThreePAR-2
+3PARStorageDomain           =   TestDomain,                                         TestDomain
+3PARStorageUser             =   dcs,                                                dcs
+3PARStoragePassword         =   dcs,                                                dcs
+3PARStoragePools            =   CPG-SSD|CPG-SSD-AO|CPG_FC-AO|FST_CPG1|FST_CPG2,     CPG-SSD|CPG-SSD-AO|CPG_FC-AO|FST_CPG1|FST_CPG2
+
+#
+# 3PAR Storage Volume Templates
+#
+3PARSVTName                 =   SVT-3PAR-Shared-1,      SVT-3PAR-Private-1,     SVT-Demo-Shared-TPDD-1,     SVT-Demo-Private-TPDD-1
+3PARSVTStorageSystem        =   ThreePAR-1,             ThreePAR-2,             ThreePAR-1,                 ThreePAR-2
+3PARSVTCapacity             =   100,                    200,                    300,                        400
+3PARSVTStoragePool          =   CPG-SSD,                CPG-SSD,                CPG-SSD,                    CPG-SSD
+3PARSVTSnapStoragePool      =   FST_CPG1,               FST_CPG2,               FST_CPG2,                   FST_CPG1
+3PARSVTProvisionType        =   Thin,                   Thin,                   TPDD,                       TPDD
+3PARSVTShared               =   True,                   False,                  True,                       False
+3PARSVTDeDupe               =   1,                      ,                       1,
+
+#
+# 3PAR Storage Volumes
+#
+3PARVolName                 =   Demo-Volume-1,          Shared-Volume-1,        Shared-Volume-2
+3PARVolStorageSystem        =   ThreePAR-1,             ThreePAR-2,             ThreePAR-2
+3PARVolCapacity             =   200,                    300,                    400
+3PARVolStoragePool          =   FST_CPG1,               FST_CPG1,               CPG-SSD
+3PARVolSnapStoragePool      =   FST_CPG2,               FST_CPG2,               FST_CPG1
+3PARVolShared               =   False,                  True,                   True
