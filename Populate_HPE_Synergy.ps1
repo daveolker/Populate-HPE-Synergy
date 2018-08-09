@@ -132,10 +132,10 @@ function Configure_SAN_Managers
 }
 
 
-function Configure_Networks
+function Configure_Networks_Pools
 {
-    <#
     Write-Output "Adding IPv4 Prod Subnet" | Timestamp
+
     [array]$ProdDNS                 = $ProdNetDNSServers.split(",").Trim()
     New-HPOVAddressPoolSubnet       -Domain $ProdNetDomain          `
                                     -Gateway $ProdNetGateway        `
@@ -149,6 +149,7 @@ function Configure_Networks
                                     -End $ProdNetPoolEnd
 
     Write-Output "Adding IPv4 Deployment Subnet" | Timestamp
+
     [array]$DeployDNS               = $DeployNetDNSServers.split(",").Trim()
     New-HPOVAddressPoolSubnet       -Domain $DeployNetDomain        `
                                     -Gateway $DeployNetGateway      `
@@ -161,26 +162,33 @@ function Configure_Networks
                                     -Start $DeployNetPoolStart      `
                                     -End $DeployNetPoolEnd
 
-    Write-Output "Adding Ethernet Networks" | Timestamp
-    [array]$NetName             = $ENetworkName.split(",").Trim()
-    [array]$NetType             = $ENetworkType.split(",").Trim()
-    [array]$NetPurpose          = $ENetworkPurpose.split(",").Trim()
-    [array]$NetMaxBandwidth     = $ENetworkMaxBandwidth.split(",").Trim()
-    [array]$NetTypicalBandwidth = $ENetworkTypicalBandwidth.split(",").Trim()
-    [array]$NetVlanID           = $ENetworkVlanID.split(",").Trim()
-    [array]$NetVlanType         = $ENetworkVlanType.split(",").Trim()
+    Write-Output "Network Pools Configuration Complete" | Timestamp
+}
 
-    if ($NetName)
+
+function Configure_Ethernet_Networks
+{
+    Write-Output "Adding Ethernet Networks" | Timestamp
+
+    [array]$ENetName             = $ENetworkName.split(",").Trim()
+    [array]$ENetType             = $ENetworkType.split(",").Trim()
+    [array]$ENetPurpose          = $ENetworkPurpose.split(",").Trim()
+    [array]$ENetMaxBandwidth     = $ENetworkMaxBandwidth.split(",").Trim()
+    [array]$ENetTypicalBandwidth = $ENetworkTypicalBandwidth.split(",").Trim()
+    [array]$ENetVlanID           = $ENetworkVlanID.split(",").Trim()
+    [array]$ENetVlanType         = $ENetworkVlanType.split(",").Trim()
+
+    if ($ENetName)
     {
-        for ($i = 0; $i -le ($NetName.Length -1); $i += 1)
+        for ($i = 0; $i -le ($ENetName.Length -1); $i += 1)
         {
-            New-HPOVNetwork     -Name $NetName[$i]                              `
-                                -Type $NetType[$i]                              `
-                                -Purpose $NetPurpose[$i]                        `
-                                -MaximumBandwidth $NetMaxBandwidth[$i]          `
-                                -TypicalBandwidth $NetTypicalBandwidth[$i]      `
-                                -VlanId $NetVlanID[$i]                          `
-                                -VLANType $NetVlanType[$i]
+            New-HPOVNetwork     -Name $ENetName[$i]                              `
+                                -Type $ENetType[$i]                              `
+                                -Purpose $ENetPurpose[$i]                        `
+                                -MaximumBandwidth $ENetMaxBandwidth[$i]          `
+                                -TypicalBandwidth $ENetTypicalBandwidth[$i]      `
+                                -VlanId $ENetVlanID[$i]                          `
+                                -VLANType $ENetVlanType[$i]
         }
     }
 
@@ -190,7 +198,14 @@ function Configure_Networks
     $Deploy_AddrPool = Get-HPOVAddressPoolSubnet -NetworkId $DeployNetSubnet
     Get-HPOVNetwork -Name $DeployNetName | Set-HPOVNetwork -IPv4Subnet $Deploy_AddrPool
 
+    Write-Output "Ethernet Network Configuration Complete" | Timestamp
+}
+
+
+function Configure_FC_Networks
+{
     Write-Output "Adding Fibre Channel Networks" | Timestamp
+
     [array]$FCNetName               = $FCNetworkName.split(",").Trim()
     [array]$FCNetType               = $FCNetworkType.split(",").Trim()
     [array]$FCNetFabricType         = $FCNetworkFabricType.split(",").Trim()
@@ -215,9 +230,15 @@ function Configure_Networks
                                 -AutoLoginRedistribution $FCAutoLogin
         }
     }
-    #>
-    
+
+    Write-Output "FC Network Configuration Complete" | Timestamp
+}
+
+
+function Configure_FCoE_Networks
+{
     Write-Output "Adding Fibre Channel over Ethernet Networks" | Timestamp
+
     [array]$FCoENetName             = $FCoENetworkName.split(",").Trim()
     [array]$FCoENetType             = $FCoENetworkType.split(",").Trim()
     [array]$FCoEVlanID              = $FCoENetworkVlanID.split(",").Trim()
@@ -238,7 +259,14 @@ function Configure_Networks
         }
     }
 
+    Write-Output "FC Network Configuration Complete" | Timestamp
+}
+
+
+function Configure_Network_Sets
+{
     Write-Output "Adding Network Sets" | Timestamp
+
     New-HPOVNetworkSet -Name Prod -Networks Prod_1101, Prod_1102, Prod_1103, Prod_1104 -MaximumBandwidth 20000 -TypicalBandwidth 2500
 
     Write-Output "Networking Configuration Complete" | Timestamp
@@ -848,16 +876,21 @@ Write-Output "Configuring HPE Synergy Appliance" | Timestamp
 #Configure_Address_Pools
 #Disable_VSN_Address_Pools
 
-####Not Working
+#*** Not Working
 #Add_Remote_Enclosures
-####
+#***
 
 #Rename_Enclosures
 #PowerOff_All_Servers
 #Configure_SAN_Managers
+#Configure_Networks_Pools
+#Configure_Ethernet_Networks
+#Configure_FC_Networks
+#Configure_FCoE_Networks
 
 ### Working up to Here
-Configure_Networks
+Configure_Network_Sets
+
 #Add_Storage
 #Add_Users
 #Create_OS_Deployment_Server
