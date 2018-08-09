@@ -64,6 +64,14 @@ FCoENetworkMaxBandwidth     =   20000,          20000
 FCoENetworkTypicalBandwidth =   8000,           8000
 
 #
+# Network Sets Settings
+#
+NetworkSetName              =   Prod,                                       ESX
+NetworkSetNetworks          =   Prod_1101|Prod_1102|Prod_1103|Prod_1104,    ESX Mgmt|ESX vMotion
+NetworkSetMaxBandwidth      =   20000,                                      20000
+NetworkSetTypicalBandwidth  =   2500,                                       2500
+
+#
 # Virtual Address Pool Settings
 #
 vMACAddressPoolRangeStart   =   5A:05:41:40:00:00

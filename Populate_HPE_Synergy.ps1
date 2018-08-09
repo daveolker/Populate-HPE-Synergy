@@ -267,9 +267,23 @@ function Configure_Network_Sets
 {
     Write-Output "Adding Network Sets" | Timestamp
 
-    New-HPOVNetworkSet -Name Prod -Networks Prod_1101, Prod_1102, Prod_1103, Prod_1104 -MaximumBandwidth 20000 -TypicalBandwidth 2500
+    [array]$NetSetName              = $NetworkSetName.split(",").Trim()
+    [array]$NetSetNetworks          = $NetworkSetNetworks.split(",").Trim()
+    [array]$NetSetMaxBandwidth      = $NetworkSetMaxBandwidth.split(",").Trim()
+    [array]$NetSetTypicalBandwidth  = $NetworkSetTypicalBandwidth.split(",").Trim()
 
-    Write-Output "Networking Configuration Complete" | Timestamp
+    if ($NetSetName)
+    {
+        for ($i = 0; $i -le ($NetSetName.Length -1); $i += 1)
+        {
+            New-HPOVNetworkSet  -Name $NetSetName[$i]                           `
+                                -Networks $NetSetNetworks[$i].Split('|')        `
+                                -MaximumBandwidth $NetSetMaxBandwidth[$i]       `
+                                -TypicalBandwidth $NetSetTypicalBandwidth[$i]
+        }
+    }
+
+    Write-Output "Network Set Configuration Complete" | Timestamp
 }
 
 
