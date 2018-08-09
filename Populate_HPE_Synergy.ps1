@@ -31,15 +31,55 @@ THE SOFTWARE.
 #>
 
 
-function Add_Remote_Enclosures
+function Add_Firmware_Bundle
 {
-    Write-Output "Adding Remote Enclosures" | Timestamp
-    Send-HPOVRequest -uri "/rest/enclosures" -method POST -body @{'hostname' = 'fe80::2:0:9:7%eth2'} | Wait-HPOVTaskComplete
-    Write-Output "Remote Enclosures Added" | Timestamp
-    #
-    # Sleep for 10 seconds to allow remote enclosures to quiesce
-    #
-    Start-Sleep 10
+    Write-Output "Adding Firmware Bundles" | Timestamp
+    $firmware_bundle = Read-Host "Optional: Specify location of Service Pack for ProLiant ISO file"
+    if ($firmware_bundle) {
+        if (Test-Path $firmware_bundle) {
+            Add-HPOVBaseline -File $firmware_bundle | Wait-HPOVTaskComplete
+        }
+        else {
+            Write-Output "Service Pack for ProLiant file '$firmware_bundle' not found.  Skipping firmware upload."
+        }
+    }
+
+    Write-Output "Firmware Bundle Added" | Timestamp
+}
+
+
+function Add_Licenses
+{
+    Write-Output "Adding OneView and Synergy FC Licenses" | Timestamp
+
+    $License_File = Read-Host -Prompt "Optional: Enter Filename Containing OneView and Synergy FC Licenses"
+    if ($License_File) {
+        New-HPOVLicense -File $License_File
+    }
+
+    Write-Output "All Licenses Added" | Timestamp
+}
+
+
+function Configure_Time_and_Locale
+{
+    Write-Output "Configuring Time and Locale" | Timestamp
+
+    if ($NTPServers)
+    {
+        Set-HPOVApplianceDateTime -Locale $Locale -NTPServers $NTPServers -PollingInterval $NTPPollingInterval
+    }
+
+    Write-Output "Time and Locale Configured" | Timestamp
+}
+
+
+function Configure_SMTP
+{
+    Write-Output "Configuring SMTP Settings" | Timestamp
+    Set-HPOVSmtpConfig -SenderEmailAddress $SMTPEmailAddress -Server $SMTPEmailServer -Port $SMTPEmailPort -ConnectionSecurity $SMTPEmailSecurity
+    Add-HPOVSmtpAlertEmailFilter -Name $SMTPAlertName -Emails $SMTPEmailAddress 
+    Write-Output "SMTP Settings Configured" | Timestamp
 }
 
 
@@ -89,6 +129,54 @@ function Disable_VSN_Address_Pools
     Write-Output "Disabling Address Pools for Virtual Serial Numbers" | Timestamp
     Send-HPOVRequest -uri "/rest/id-pools/vsn" -method PUT -body @{'type' = 'Pool'; 'enabled' = 'false'}
     Write-Output "Virtual Serial Number Address Pool Ranges Disabled" | Timestamp
+}
+
+
+function Add_Remote_Enclosures
+{
+    Write-Output "Adding Remote Enclosures" | Timestamp
+    Send-HPOVRequest -uri "/rest/enclosures" -method POST -body @{'hostname' = 'fe80::2:0:9:7%eth2'} | Wait-HPOVTaskComplete
+    Write-Output "Remote Enclosures Added" | Timestamp
+    #
+    # Sleep for 10 seconds to allow remote enclosures to quiesce
+    #
+    Start-Sleep 10
+}
+
+
+function Rename_Enclosures
+{
+    Write-Output "Renaming Enclosures" | Timestamp
+    [array]$EncSerialNums = $EnclosureSerialNumbers.split(",").Trim()
+    [array]$EncNames      = $EnclosureNames.split(",").Trim()
+
+    if ($EncSerialNums)
+    {
+        for ($i = 0; $i -le ($EncSerialNums.Length -1); $i += 1)
+        {
+            $Enc = Get-HPOVEnclosure -Name $EncSerialNums[$i] -ErrorAction Stop
+            Set-HPOVEnclosure -Name $EncNames[$i] -Enclosure $Enc | Wait-HPOVTaskComplete
+        }
+    }
+
+    Write-Output "All Enclosures Renamed" | Timestamp
+}
+
+
+function PowerOff_All_Servers
+{
+    Write-Output "Powering Off All Servers" | Timestamp
+
+    $Servers = Get-HPOVServer
+
+    $Servers | ForEach-Object {
+        if ($_.PowerState -ne "Off") {
+            Write-Host "Server $($_.Name) is $($_.PowerState).  Powering off..." | Timestamp
+            Stop-HPOVServer -Server $_ -Force -Confirm:$false | Wait-HPOVTaskComplete
+        }
+    }
+
+    Write-Output "All Servers Powered Off" | Timestamp
 }
 
 
@@ -287,11 +375,27 @@ function Configure_Network_Sets
 }
 
 
-function Add_Storage
+function Configure_3PAR_Storage
 {
     Write-Output "Adding 3PAR Storage Systems" | Timestamp
-    Add-HPOVStorageSystem -Hostname 172.18.11.11 -Password dcs -Username dcs -Domain TestDomain | Wait-HPOVTaskComplete
-    Add-HPOVStorageSystem -Hostname 172.18.11.12 -Password dcs -Username dcs -Domain TestDomain | Wait-HPOVTaskComplete
+
+    [array]$3PARName                = $3PARStorageName.split(",").Trim()
+    [array]$3PARDomain              = $3PARStorageDomain.split(",").Trim()
+    [array]$3PARUser                = $3PARStorageUser.split(",").Trim()
+    [array]$3PARPassword            = $3PARStoragePassword.split(",").Trim()
+
+    if ($3PARName)
+    {
+        for ($i = 0; $i -le ($3PARName.Length -1); $i += 1)
+        {
+            Add-HPOVStorageSystem   -Hostname $3PARName[$i]         `
+                                    -Domain $3PARDomain[$i]         `
+                                    -Username $3PARUser[$i]         `
+                                    -Password $3PARPassword[$i]
+        }
+    }
+    
+    Exit
 
     Write-Output "Adding 3PAR Storage Pools" | Timestamp
     $StoragePools = "CPG-SSD", "CPG-SSD-AO", "CPG_FC-AO", "FST_CPG1", "FST_CPG2"
@@ -309,7 +413,14 @@ function Add_Storage
     New-HPOVStorageVolume -Capacity 200 -Name Shared-Volume-1 -StoragePool FST_CPG1 -SnapshotStoragePool FST_CPG1 -Shared -StorageSystem ThreePAR-2 | Wait-HPOVTaskComplete
     New-HPOVStorageVolume -Capacity 200 -Name Shared-Volume-2 -StoragePool FST_CPG1 -SnapshotStoragePool FST_CPG1 -Shared -StorageSystem ThreePAR-2 | Wait-HPOVTaskComplete
 
+    Write-Output "3PAR Storage Configuration Complete" | Timestamp
+}
+
+
+function Configure_StoreVirtual_Storage
+{
     Write-Output "Adding StoreVirtual Storage Systems" | Timestamp
+
     $SVNet1 = Get-HPOVNetwork -Name SVCluster-1 -ErrorAction Stop
     Add-HPOVStorageSystem -Hostname 172.18.30.1 -Family StoreVirtual -Password dcs -Username dcs -VIPS @{ "172.18.30.1" = $SVNet1 } | Wait-HPOVTaskComplete
     $SVNet2 = Get-HPOVNetwork -Name SVCluster-2 -ErrorAction Stop
@@ -322,26 +433,7 @@ function Add_Storage
     New-HPOVStorageVolumeTemplate -Capacity 100 -Name SVT-StoreVirt-2 -ProvisionType Thin -StoragePool Cluster-2 -Shared -StorageSystem Cluster-2
     New-HPOVStorageVolumeTemplate -Capacity 100 -Name SVT-StoreVirt-3 -ProvisionType Thin -StoragePool Cluster-3 -Shared -StorageSystem Cluster-3
 
-    Write-Output "Storage Configuration Complete" | Timestamp
-}
-
-
-function Rename_Enclosures
-{
-    Write-Output "Renaming Enclosures" | Timestamp
-    [array]$EncSerialNums = $EnclosureSerialNumbers.split(",").Trim()
-    [array]$EncNames      = $EnclosureNames.split(",").Trim()
-
-    if ($EncSerialNums)
-    {
-        for ($i = 0; $i -le ($EncSerialNums.Length -1); $i += 1)
-        {
-            $Enc = Get-HPOVEnclosure -Name $EncSerialNums[$i] -ErrorAction Stop
-            Set-HPOVEnclosure -Name $EncNames[$i] -Enclosure $Enc | Wait-HPOVTaskComplete
-        }
-    }
-
-    Write-Output "All Enclosures Renamed" | Timestamp
+    Write-Output "StoreVirtual Configuration Complete" | Timestamp
 }
 
 
@@ -444,36 +536,6 @@ function Create_Logical_Interconnect_Groups_Remote
     New-HPOVLogicalInterconnectGroup -Name "LIG-FlexFabric-Remote-1" -FrameCount 2 -InterconnectBaySet 2 -FabricModuleType "SEVC40F8" -Bays @{Frame1 = @{Bay2 = "SEVC40f8" ; Bay5 = "SE20ILM"};Frame2 = @{Bay2 = "SE20ILM"; Bay5 = "SEVC40F8" }} -FabricRedundancy "HighlyAvailable"
     New-HPOVLogicalInterconnectGroup -Name "LIG-FlexFabric-Remote-2" -FrameCount 2 -InterconnectBaySet 3 -FabricModuleType "SEVC40F8" -Bays @{Frame1 = @{Bay3 = "SEVC40f8" ; Bay6 = "SE20ILM"};Frame2 = @{Bay3 = "SE20ILM"; Bay6 = "SEVC40F8" }} -FabricRedundancy "HighlyAvailable"
     Write-Output "Logical Interconnect Groups Created" | Timestamp
-}
-
-
-function Add_Licenses
-{
-    Write-Output "Adding OneView and Synergy FC Licenses" | Timestamp
-
-    $License_File = Read-Host -Prompt "Optional: Enter Filename Containing OneView and Synergy FC Licenses"
-    if ($License_File) {
-        New-HPOVLicense -File $License_File
-    }
-
-    Write-Output "All Licenses Added" | Timestamp
-}
-
-
-function Add_Firmware_Bundle
-{
-    Write-Output "Adding Firmware Bundles" | Timestamp
-    $firmware_bundle = Read-Host "Optional: Specify location of Service Pack for ProLiant ISO file"
-    if ($firmware_bundle) {
-        if (Test-Path $firmware_bundle) {
-            Add-HPOVBaseline -File $firmware_bundle | Wait-HPOVTaskComplete
-        }
-        else {
-            Write-Output "Service Pack for ProLiant file '$firmware_bundle' not found.  Skipping firmware upload."
-        }
-    }
-
-    Write-Output "Firmware Bundle Added" | Timestamp
 }
 
 
@@ -753,23 +815,6 @@ function Create_Server_Profile_SY480_Gen10_ESX_SAN_Boot
 }
 
 
-function PowerOff_All_Servers
-{
-    Write-Output "Powering Off All Servers" | Timestamp
-
-    $Servers = Get-HPOVServer
-
-    $Servers | ForEach-Object {
-        if ($_.PowerState -ne "Off") {
-            Write-Host "Server $($_.Name) is $($_.PowerState).  Powering off..." | Timestamp
-            Stop-HPOVServer -Server $_ -Force -Confirm:$false | Wait-HPOVTaskComplete
-        }
-    }
-
-    Write-Output "All Servers Powered Off" | Timestamp
-}
-
-
 function Add_Users
 {
     Write-Output "Adding New Users" | Timestamp
@@ -794,28 +839,6 @@ function Add_Scopes
     Get-HPOVScope -Name FinanceScope | Add-HPOVResourceToScope -InputObject $Resources
 
     Write-Output "All New Scopes Added" | Timestamp
-}
-
-
-function Configure_Time_and_Locale
-{
-    Write-Output "Configuring Time and Locale" | Timestamp
-
-    if ($NTPServers)
-    {
-        Set-HPOVApplianceDateTime -Locale $Locale -NTPServers $NTPServers -PollingInterval $NTPPollingInterval
-    }
-
-    Write-Output "Time and Locale Configured" | Timestamp
-}
-
-
-function Configure_SMTP
-{
-    Write-Output "Configuring SMTP Settings" | Timestamp
-    Set-HPOVSmtpConfig -SenderEmailAddress $SMTPEmailAddress -Server $SMTPEmailServer -Port $SMTPEmailPort -ConnectionSecurity $SMTPEmailSecurity
-    Add-HPOVSmtpAlertEmailFilter -Name $SMTPAlertName -Emails $SMTPEmailAddress 
-    Write-Output "SMTP Settings Configured" | Timestamp
 }
 
 
@@ -901,11 +924,12 @@ Write-Output "Configuring HPE Synergy Appliance" | Timestamp
 #Configure_Ethernet_Networks
 #Configure_FC_Networks
 #Configure_FCoE_Networks
+#Configure_Network_Sets
 
 ### Working up to Here
-Configure_Network_Sets
+Configure_3PAR_Storage
+#Configure_StoreVirtual_Storage
 
-#Add_Storage
 #Add_Users
 #Create_OS_Deployment_Server
 #Create_Logical_Interconnect_Groups
