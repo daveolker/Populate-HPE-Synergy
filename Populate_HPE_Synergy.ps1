@@ -135,7 +135,6 @@ function Configure_SAN_Managers
 function Configure_Networks
 {
     Write-Output "Adding IPv4 Prod Subnet" | Timestamp
-
     [array]$ProdDNS                 = $ProdNetDNSServers.split(",").Trim()
     New-HPOVAddressPoolSubnet       -Domain $ProdNetDomain          `
                                     -Gateway $ProdNetGateway        `
@@ -149,7 +148,6 @@ function Configure_Networks
                                     -End $ProdNetPoolEnd
 
     Write-Output "Adding IPv4 Deployment Subnet" | Timestamp
-
     [array]$DeployDNS               = $DeployNetDNSServers.split(",").Trim()
     New-HPOVAddressPoolSubnet       -Domain $DeployNetDomain        `
                                     -Gateway $DeployNetGateway      `
@@ -162,21 +160,30 @@ function Configure_Networks
                                     -Start $DeployNetPoolStart      `
                                     -End $DeployNetPoolEnd
 
-    Exit
-    
-    Write-Output "Adding Networks" | Timestamp
-    New-HPOVNetwork -Name "ESX Mgmt" -MaximumBandwidth 20000 -Purpose Management -Type Ethernet -TypicalBandwidth 2500 -VlanId 1131 -VLANType Tagged
-    New-HPOVNetwork -Name "ESX vMotion" -MaximumBandwidth 20000 -Purpose VMMigration -Type Ethernet -TypicalBandwidth 2500 -VlanId 1132 -VLANType Tagged
-    New-HPOVNetwork -Name Prod_1101 -MaximumBandwidth 20000 -Purpose General -Type Ethernet -TypicalBandwidth 2500 -VlanId 1101 -VLANType Tagged
-    New-HPOVNetwork -Name Prod_1102 -MaximumBandwidth 20000 -Purpose General -Type Ethernet -TypicalBandwidth 2500 -VlanId 1102 -VLANType Tagged
-    New-HPOVNetwork -Name Prod_1103 -MaximumBandwidth 20000 -Purpose General -Type Ethernet -TypicalBandwidth 2500 -VlanId 1103 -VLANType Tagged
-    New-HPOVNetwork -Name Prod_1104 -MaximumBandwidth 20000 -Purpose General -Type Ethernet -TypicalBandwidth 2500 -VlanId 1104 -VLANType Tagged
-    New-HPOVNetwork -Name Deployment -MaximumBandwidth 20000 -Purpose General -Type Ethernet -TypicalBandwidth 2500 -VlanId 1500 -VLANType Tagged
-    New-HPOVNetwork -Name Mgmt -MaximumBandwidth 20000 -Purpose Management -Type Ethernet -TypicalBandwidth 2500 -VlanId 100 -VLANType Tagged
-    New-HPOVNetwork -Name SVCluster-1 -MaximumBandwidth 20000 -Purpose ISCSI -Type Ethernet -TypicalBandwidth 2500 -VlanId 301 -VLANType Tagged
-    New-HPOVNetwork -Name SVCluster-2 -MaximumBandwidth 20000 -Purpose ISCSI -Type Ethernet -TypicalBandwidth 2500 -VlanId 302 -VLANType Tagged
-    New-HPOVNetwork -Name SVCluster-3 -MaximumBandwidth 20000 -Purpose ISCSI -Type Ethernet -TypicalBandwidth 2500 -VlanId 303 -VLANType Tagged
+    Write-Output "Adding Ethernet Networks" | Timestamp    
+    [array]$NetName             = $ENetworkName.split(",").Trim()
+    [array]$NetType             = $ENetworkType.split(",").Trim()
+    [array]$NetPurpose          = $ENetworkPurpose.split(",").Trim()
+    [array]$NetMaxBandwidth     = $ENetworkMaxBandwidth.split(",").Trim()
+    [array]$NetTypicalBandwidth = $ENetworkTypicalBandwidth.split(",").Trim()
+    [array]$NetVlanID           = $ENetworkVlanID.split(",").Trim()
+    [array]$NetVlanType         = $ENetworkVlanType.split(",").Trim()
 
+    if ($NetName)
+    {
+        for ($i = 0; $i -le ($NetName.Length -1); $i += 1)
+        {
+            New-HPOVNetwork     -Name $NetName[$i]                              `
+                                -Type $NetType[$i]                              `
+                                -Purpose $NetPurpose[$i]                        `
+                                -MaximumBandwidth $NetMaxBandwidth[$i]          `
+                                -TypicalBandwidth $NetTypicalBandwidth[$i]      `
+                                -VlanId $NetVlanID[$i]                          `
+                                -VLANType $NetVlanType[$i]
+        }
+    }
+
+    
     $Deploy_AddrPool = Get-HPOVAddressPoolSubnet -NetworkId $deploy_subnet
     Get-HPOVNetwork -Name Deployment | Set-HPOVNetwork -IPv4Subnet $Deploy_AddrPool
     $Prod_AddrPool = Get-HPOVAddressPoolSubnet -NetworkId $prod_subnet

@@ -31,15 +31,15 @@ DeployNetMask               =   255.255.255.0
 DeployNetDNSServers         =
 
 #
-# Network Settings
+# Ethernet Network Settings
 #
-NetworkName                 =   "ESX Mgmt",   "ESX vMotion",   "Prod_1101",   "Prod_1102",   "Prod_1103",   "Prod_1104",   "Deployment",   "Mgmt",       "SVCluster-1",   "SVCluster-2",   "SVCluster-3"
-NetworkType                 =   Ethernet,     Ethernet,        Ethernet,      Ethernet,      Ethernet,      Ethernet,      Ethernet,       Ethernet,     Ethernet,        Ethernet,        Ethernet
-NetworkPurpose              =   Management,   VMMigration,     General,       General,       General,       General,       General,        Management,   ISCSI,           ISCSI,           ISCSI
-NetworkMaxBandwidth         =   20000,        20000,           20000,         20000,         20000,         20000,         20000,          20000,        20000,           20000,           20000
-NetworkTypicalBandwidth     =   2500,         2500,            2500,          2500,          2500,          2500,          2500,           2500,         2500,            2500,            2500
-NetworkVlanID               =   1131,         1132,            1101,          1102,          1103,          1104,          1500,           100,          301,             302,             303
-NetworkVlanType             =   Tagged,       Tagged,          Tagged,        Tagged,        Tagged,        Tagged,        Tagged,         Tagged,       Tagged,          Tagged,          Tagged
+ENetworkName                =   ESX Mgmt,     ESX vMotion,     Prod_1101,     Prod_1102,     Prod_1103,     Prod_1104,     Deployment,     Mgmt,         SVCluster-1,     SVCluster-2,     SVCluster-3
+ENetworkType                =   Ethernet,     Ethernet,        Ethernet,      Ethernet,      Ethernet,      Ethernet,      Ethernet,       Ethernet,     Ethernet,        Ethernet,        Ethernet
+ENetworkPurpose             =   Management,   VMMigration,     General,       General,       General,       General,       General,        Management,   ISCSI,           ISCSI,           ISCSI
+ENetworkMaxBandwidth        =   20000,        20000,           20000,         20000,         20000,         20000,         20000,          20000,        20000,           20000,           20000
+ENetworkTypicalBandwidth    =   2500,         2500,            2500,          2500,          2500,          2500,          2500,           2500,         2500,            2500,            2500
+ENetworkVlanID              =   1131,         1132,            1101,          1102,          1103,          1104,          1500,           100,          301,             302,             303
+ENetworkVlanType            =   Tagged,       Tagged,          Tagged,        Tagged,        Tagged,        Tagged,        Tagged,         Tagged,       Tagged,          Tagged,          Tagged
 
 #
 # Virtual Address Pool Settings
@@ -65,7 +65,7 @@ SMTPEmailAddress            =   dave.olker@hpe.com
 SMTPEmailServer             =   smtp.hpe.com
 SMTPEmailPort               =   25
 SMTPEmailSecurity           =   None
-SMTPAlertName               =   "All Alerts"
+SMTPAlertName               =   All Alerts
 
 #
 # Enclosure Renaming Settings
