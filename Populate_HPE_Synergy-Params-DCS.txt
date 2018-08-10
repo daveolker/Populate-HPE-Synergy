@@ -196,3 +196,13 @@ OSDeploymentName            =   LE1 Image Streamer
 OSDeploymentDescription     =   Image Streamer for Logical Enclosure 1
 OSDeploymentEnclosure       =   Synergy-Enc-3
 OSDeploymentAppliance       =   appliance 2
+
+#
+# Logical Interconnect Groups Configuration
+#
+LIGroupName                 =   LIG-SAS,                                                LIG-FC,                                                         LIG-FlexFabric
+LIGroupFrameCount           =   1,                                                      1,                                                              3
+LIGroupInterconnectBaySet   =   1,                                                      2,                                                              3
+LIGroupFabricModuleType     =   SAS,                                                    SEVCFC,                                                         SEVC40F8
+LIGroupBays                 =   @{Frame1 = @{Bay1 = "SE12SAS" ; Bay4 = "SE12SAS"}},     @{Frame1 = @{Bay2 = "SEVC16GbFC" ; Bay5 = "SEVC16GbFC"}},       @{Frame1 = @{Bay3 = "SEVC40f8" ; Bay6 = "SE20ILM"};Frame2 = @{Bay3 = "SE20ILM"; Bay6 = "SEVC40f8" };Frame3 = @{Bay3 = "SE20ILM"; Bay6 = "SE20ILM"}}
+LIGroupFabricRedundancy     =   None,                                                   Redundant,                                                      HighlyAvailable

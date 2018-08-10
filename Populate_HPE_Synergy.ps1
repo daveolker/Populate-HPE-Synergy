@@ -630,6 +630,50 @@ function Create_OS_Deployment_Server
 }
 
 
+function Create_Logical_Interconnect_Groups
+{
+    Write-Output "Creating Local Logical Interconnect Groups" | Timestamp
+
+    [array]$LIGName                 = $LIGroupName.split(",").Trim()
+    [array]$LIGFrameCount           = $LIGroupFrameCount.split(",").Trim()
+    [array]$LIGBaySet               = $LIGroupInterconnectBaySet.split(",").Trim()
+    [array]$LIGFabModType           = $LIGroupFabricModuleType.split(",").Trim()
+    [array]$LIGBays                 = $LIGroupBays.split(",").Trim()
+    [array]$LIGRedundancy           = $LIGroupFabricRedundancy.split(",").Trim()
+
+    if ($LIGName)
+    {
+        for ($i = 0; $i -le ($LIGName.Length -1); $i += 1)
+        {
+            $Bays = '@{Frame1 = @{Bay1 = "SE12SAS" ; Bay4 = "SE12SAS"}}'
+            $BayHashTable = $Bays | ConvertFrom-StringData
+
+            if ($LIGRedundancy[$i] -eq "None")
+            {
+                New-HPOVLogicalInterconnectGroup    -Name $LIGName[$i]                      `
+                                                    -FrameCount $LIGFrameCount[$i]          `
+                                                    -InterconnectBaySet $LIGBaySet[$i]      `
+                                                    -FabricModuleType $LIGFabModType[$i]    `
+                                                    -Bays $BayHashTable
+            } else {
+                New-HPOVLogicalInterconnectGroup    -Name $LIGName[$i]                      `
+                                                    -FrameCount $LIGFrameCount[$i]          `
+                                                    -InterconnectBaySet $LIGBaySet[$i]      `
+                                                    -FabricModuleType $LIGFabModType[$i]    `
+                                                    -FabricRedundancy $LIGRedundancy[$i]    `
+                                                    -Bays $BayHashTable
+            }
+        }
+    }
+
+    #New-HPOVLogicalInterconnectGroup -Name "LIG-SAS" -FrameCount 1 -InterconnectBaySet 1 -FabricModuleType "SAS" -Bays @{Frame1 = @{Bay1 = "SE12SAS" ; Bay4 = "SE12SAS"}}
+    #New-HPOVLogicalInterconnectGroup -Name "LIG-FC" -FrameCount 1 -InterconnectBaySet 2 -FabricModuleType "SEVCFC" -Bays @{Frame1 = @{Bay2 = "SEVC16GbFC" ; Bay5 = "SEVC16GbFC"}}
+    #New-HPOVLogicalInterconnectGroup -Name "LIG-FlexFabric" -FrameCount 3 -InterconnectBaySet 3 -FabricModuleType "SEVC40F8" -Bays @{Frame1 = @{Bay3 = "SEVC40f8" ; Bay6 = "SE20ILM"};Frame2 = @{Bay3 = "SE20ILM"; Bay6 = "SEVC40f8" };Frame3 = @{Bay3 = "SE20ILM"; Bay6 = "SE20ILM"}} -FabricRedundancy "HighlyAvailable"
+
+    Write-Output "Logical Interconnect Groups Created" | Timestamp
+}
+
+
 function Create_Uplink_Sets
 {
     Write-Output "Adding Fibre Channel and FCoE Uplink Sets" | Timestamp
@@ -709,16 +753,6 @@ function Create_Logical_Enclosure_Remote
     $Encl = Get-HPOVEnclosure -Name Synergy-Encl-4
     New-HPOVLogicalEnclosure -EnclosureGroup $EG -Name LE-Synergy-Remote -Enclosure $Encl | Wait-HPOVTaskComplete
     Write-Output "Logical Enclosure Created" | Timestamp
-}
-
-
-function Create_Logical_Interconnect_Groups
-{
-    Write-Output "Creating Local Logical Interconnect Groups" | Timestamp
-    New-HPOVLogicalInterconnectGroup -Name "LIG-SAS" -FrameCount 1 -InterconnectBaySet 1 -FabricModuleType "SAS" -Bays @{Frame1 = @{Bay1 = "SE12SAS" ; Bay4 = "SE12SAS"}}
-    New-HPOVLogicalInterconnectGroup -Name "LIG-FC" -FrameCount 1 -InterconnectBaySet 2 -FabricModuleType "SEVCFC" -Bays @{Frame1 = @{Bay2 = "SEVC16GbFC" ; Bay5 = "SEVC16GbFC"}}
-    New-HPOVLogicalInterconnectGroup -Name "LIG-FlexFabric" -FrameCount 3 -InterconnectBaySet 3 -FabricModuleType "SEVC40F8" -Bays @{Frame1 = @{Bay3 = "SEVC40f8" ; Bay6 = "SE20ILM"};Frame2 = @{Bay3 = "SE20ILM"; Bay6 = "SEVC40f8" };Frame3 = @{Bay3 = "SE20ILM"; Bay6 = "SE20ILM"}} -FabricRedundancy "HighlyAvailable"
-    Write-Output "Logical Interconnect Groups Created" | Timestamp
 }
 
 
@@ -1045,18 +1079,17 @@ filter Timestamp {"$(Get-Date -Format G): $_"}
 # Process variables in the Populate_HPE_Synergy-Params.txt file.
 #
 ##########################################################################
-New-Variable -Name config_file -Value .\Populate_HPE_Synergy-Params-DCS.txt -Scope Global -Force
-
+New-Variable -Name Parms_File -Value .\Populate_HPE_Synergy-Params-DCS.txt -Scope Global -Force
 #
 # Remove blank lines and comments from the Params file
 #
-if (Test-Path $config_file) {
-    Get-Content $config_file | Where-Object { $_ -and !$_.StartsWith("#") } | Foreach-Object {
-        $var = $_.Split('=')
+if (Test-Path $Parms_File) {
+    Get-Content $Parms_File | Where-Object { $_ -and !$_.StartsWith("#") } | Foreach-Object {
+        $var = $_ -split "=", 2
         New-Variable -Name $var[0].Trim() -Value $var[1].Trim() -Scope Global -Force
     }
 } else {
-    Write-Output "Configuration file '$config_file' not found.  Exiting." | Timestamp
+    Write-Output "Configuration file '$Parms_File' not found.  Exiting." | Timestamp
     Exit
 }
 
@@ -1091,9 +1124,10 @@ Write-Output "Configuring HPE Synergy Appliance" | Timestamp
 ### Working up to Here
 Create_Logical_Interconnect_Groups
 
-#Create_Uplink_Sets
+Create_Uplink_Sets
 #Create_Enclosure_Group
 #Create_Logical_Enclosure
+
 #Create_Server_Profile_Template_SY480_Gen9_RHEL_Local_Boot
 #Create_Server_Profile_Template_SY660_Gen9_Windows_SAN_Storage
 #Create_Server_Profile_Template_SY480_Gen9_ESX_SAN_Boot
