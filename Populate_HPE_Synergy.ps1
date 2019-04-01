@@ -3,12 +3,12 @@
 #
 # - Example script for configuring the HPE Synergy Appliance
 #
-#   VERSION 4.00
+#   VERSION 4.20
 #
 #   AUTHORS
-#   Dave Olker - HPE Global Solutions Engineering
+#   Dave Olker - HPE Software-Defined Cloud Group
 #
-# (C) Copyright 2018 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2019 Hewlett Packard Enterprise Development LP
 ##############################################################################
 <#
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -375,7 +375,7 @@ function Create_Server_Profile_Template_SY660_Gen9_Windows_SAN_Storage
     $FC1               = Get-HPOVNetwork -Name 'SAN A FC' | New-HPOVServerProfileConnection -connectionId 3
     $FC2               = Get-HPOVNetwork -Name 'SAN B FC' | New-HPOVServerProfileConnection -connectionId 4
     $LogicalDisk       = New-HPOVServerProfileLogicalDisk -Name "SAS RAID5 SSD" -RAID RAID5 -NumberofDrives 3 -DriveType SASSSD -Bootable $True
-    $SANVol            = Get-HPOVStorageVolume -Name "Shared-Volume-2" | New-HPOVProfileAttachVolume -LunIdType Manual -LunID 0
+    $SANVol            = Get-HPOVStorageVolume -Name "Shared-Volume-2" | New-HPOVServerProfileAttachVolume -VolumeID 1
     $StorageController = New-HPOVServerProfileLogicalDiskController -ControllerID Embedded -Mode RAID -Initialize -LogicalDisk $LogicalDisk
 
     $params = @{
@@ -629,10 +629,11 @@ Remove-Module -ErrorAction SilentlyContinue HPOneView.200
 Remove-Module -ErrorAction SilentlyContinue HPOneView.300
 Remove-Module -ErrorAction SilentlyContinue HPOneView.310
 Remove-Module -ErrorAction SilentlyContinue HPOneView.400
+Remove-Module -ErrorAction SilentlyContinue HPOneView.410
 
-if (-not (get-module HPOneview.410))
+if (-not (get-module HPOneview.420))
 {
-    Import-Module -Name HPOneView.410
+    Import-Module -Name HPOneView.420
 }
 
 if (-not $ConnectedSessions)

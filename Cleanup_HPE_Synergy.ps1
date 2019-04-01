@@ -3,12 +3,12 @@
 #
 # - Example script for de-configuring the HPE Synergy Appliance
 #
-#   VERSION 3.1
+#   VERSION 4.20
 #
 #   AUTHORS
-#   Dave Olker - Global Solutions Engineering (BEST)
+#   Dave Olker - HPE Software-Defined Cloud Group
 #
-# (C) Copyright 2017 Hewlett Packard Enterprise Development LP 
+# (C) Copyright 2019 Hewlett Packard Enterprise Development LP 
 ##############################################################################
 <#
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -219,9 +219,9 @@ function Remove_Scopes
 #
 ##############################################################################
 
-if (-not (get-module HPOneview.310)) 
+if (-not (get-module HPOneview.420)) 
 {
-    Import-Module HPOneView.310
+    Import-Module HPOneView.420
 }
 
 if (-not $ConnectedSessions) 
@@ -230,7 +230,7 @@ if (-not $ConnectedSessions)
 	$Username  = Read-Host 'Username'
 	$Password  = Read-Host 'Password' -AsSecureString
 
-    $ApplianceConnection = Connect-HPOVMgmt -Hostname $Appliance -Username $Username -Password $Password
+    Connect-HPOVMgmt -Hostname $Appliance -Username $Username -Password $Password
     
     if (-not $ConnectedSessions)
     {
