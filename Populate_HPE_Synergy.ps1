@@ -109,10 +109,11 @@ function Add_Storage
     Add-HPOVStorageSystem -Hostname 172.18.11.12 -Password dcs -Username dcs -Domain TestDomain | Wait-HPOVTaskComplete
 
     Write-Output "Adding 3PAR Storage Pools" | Timestamp
-    $StoragePools = "CPG-SSD", "CPG-SSD-AO", "CPG_FC-AO", "FST_CPG1", "FST_CPG2"
-    Add-HPOVStoragePool -StorageSystem ThreePAR-1 $StoragePools | Wait-HPOVTaskComplete
-    Add-HPOVStoragePool -StorageSystem ThreePAR-2 $StoragePools | Wait-HPOVTaskComplete
-
+    $SPNames = @("CPG-SSD", "CPG-SSD-AO", "CPG_FC-AO", "FST_CPG1", "FST_CPG2")
+    for ($i=0; $i -lt $SPNames.Length; $i++) {
+        Get-HPOVStoragePool -Name $SPNames[$i] -ErrorAction Stop | Set-HPOVStoragePool -Managed $true | Wait-HPOVTaskComplete
+    }
+    
     Write-Output "Adding 3PAR Storage Volume Templates" | Timestamp
     New-HPOVStorageVolumeTemplate -Capacity 100 -Name SVT-3PAR-Shared-1 -ProvisionType Thin -StoragePool CPG-SSD -Shared -SnapshotStoragePool CPG-SSD -StorageSystem ThreePAR-1
     New-HPOVStorageVolumeTemplate -Capacity 100 -Name SVT-3PAR-Shared-2 -ProvisionType Thin -StoragePool CPG-SSD -Shared -SnapshotStoragePool CPG-SSD -StorageSystem ThreePAR-2
