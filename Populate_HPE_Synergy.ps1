@@ -3,10 +3,10 @@
 #
 # - Example script for configuring the HPE Synergy Appliance
 #
-#   VERSION 4.20
+#   VERSION 5.0
 #
 #   AUTHORS
-#   Dave Olker - HPE Software-Defined Cloud Group
+#   Dave Olker - HPE Storage and Big Data
 #
 # (C) Copyright 2019 Hewlett Packard Enterprise Development LP
 ##############################################################################
@@ -29,6 +29,13 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 #>
+
+# ------------------ Parameters
+Param ( [String]$OVApplianceIP                  = "192.168.62.128",
+        [String]$OVAdminName                    = "Administrator",
+        [String]$OVAuthDomain                   = "Local",
+        [String]$OneViewModule                  = "HPOneView.500"
+)
 
 
 function Add_Remote_Enclosures
@@ -115,15 +122,15 @@ function Add_Storage
     }
     
     Write-Output "Adding 3PAR Storage Volume Templates" | Timestamp
-    New-HPOVStorageVolumeTemplate -Capacity 100 -Name SVT-3PAR-Shared-1 -ProvisionType Thin -StoragePool CPG-SSD -Shared -SnapshotStoragePool CPG-SSD -StorageSystem ThreePAR-1
-    New-HPOVStorageVolumeTemplate -Capacity 100 -Name SVT-3PAR-Shared-2 -ProvisionType Thin -StoragePool CPG-SSD -Shared -SnapshotStoragePool CPG-SSD -StorageSystem ThreePAR-2
-    New-HPOVStorageVolumeTemplate -Capacity 100 -Name SVT-Demo-Shared-TPDD-1 -ProvisionType TPDD -StoragePool CPG-SSD -Shared -SnapshotStoragePool CPG-SSD -StorageSystem ThreePAR-1
-    New-HPOVStorageVolumeTemplate -Capacity 100 -Name SVT-Demo-Shared-TPDD-2 -ProvisionType TPDD -StoragePool CPG-SSD -Shared -SnapshotStoragePool CPG-SSD -StorageSystem ThreePAR-2
+    Get-HPOVStoragePool CPG-SSD -StorageSystem ThreePAR-1 | New-HPOVStorageVolumeTemplate -Capacity 100 -Name SVT-3PAR-Shared-1 -ProvisionType Thin -Shared
+    Get-HPOVStoragePool CPG-SSD -StorageSystem ThreePAR-2 | New-HPOVStorageVolumeTemplate -Capacity 100 -Name SVT-3PAR-Shared-2 -ProvisionType Thin -Shared
+    Get-HPOVStoragePool CPG-SSD -StorageSystem ThreePAR-1 | New-HPOVStorageVolumeTemplate -Capacity 100 -Name SVT-Demo-Shared-TPDD-1 -ProvisionType Thin -EnableDeduplication $true -EnableCompression $true -Shared
+    Get-HPOVStoragePool CPG-SSD -StorageSystem ThreePAR-2 | New-HPOVStorageVolumeTemplate -Capacity 100 -Name SVT-Demo-Shared-TPDD-2 -ProvisionType Thin -EnableDeduplication $true -EnableCompression $true -Shared
 
     Write-Output "Adding 3PAR Storage Volumes" | Timestamp
-    New-HPOVStorageVolume -Capacity 200 -Name Demo-Volume-1 -StoragePool FST_CPG1 -SnapshotStoragePool FST_CPG1 -StorageSystem ThreePAR-1 | Wait-HPOVTaskComplete
-    New-HPOVStorageVolume -Capacity 200 -Name Shared-Volume-1 -StoragePool FST_CPG1 -SnapshotStoragePool FST_CPG1 -Shared -StorageSystem ThreePAR-2 | Wait-HPOVTaskComplete
-    New-HPOVStorageVolume -Capacity 200 -Name Shared-Volume-2 -StoragePool FST_CPG1 -SnapshotStoragePool FST_CPG1 -Shared -StorageSystem ThreePAR-2 | Wait-HPOVTaskComplete
+    Get-HPOVStoragePool FST_CPG1 -StorageSystem ThreePAR-1 | New-HPOVStorageVolume -Capacity 200 -Name Demo-Volume-1 | Wait-HPOVTaskComplete
+    Get-HPOVStoragePool FST_CPG1 -StorageSystem ThreePAR-2 | New-HPOVStorageVolume -Capacity 200 -Name Shared-Volume-1 -Shared | Wait-HPOVTaskComplete
+    Get-HPOVStoragePool FST_CPG1 -StorageSystem ThreePAR-2 | New-HPOVStorageVolume -Capacity 200 -Name Shared-Volume-2 -Shared | Wait-HPOVTaskComplete
 
     Write-Output "Adding StoreVirtual Storage Systems" | Timestamp
     $SVNet1 = Get-HPOVNetwork -Name SVCluster-1 -ErrorAction Stop
@@ -134,9 +141,9 @@ function Add_Storage
     Add-HPOVStorageSystem -Hostname 172.18.30.3 -Family StoreVirtual -Password dcs -Username dcs -VIPS @{ "172.18.30.3" = $SVNet3 } | Wait-HPOVTaskComplete
 
     Write-Output "Adding StoreVirtual Storage Volume Templates" | Timestamp
-    New-HPOVStorageVolumeTemplate -Capacity 100 -Name SVT-StoreVirt-1 -ProvisionType Thin -StoragePool Cluster-1 -Shared -StorageSystem Cluster-1
-    New-HPOVStorageVolumeTemplate -Capacity 100 -Name SVT-StoreVirt-2 -ProvisionType Thin -StoragePool Cluster-2 -Shared -StorageSystem Cluster-2
-    New-HPOVStorageVolumeTemplate -Capacity 100 -Name SVT-StoreVirt-3 -ProvisionType Thin -StoragePool Cluster-3 -Shared -StorageSystem Cluster-3
+    Get-HPOVStoragePool Cluster-1 -StorageSystem Cluster-1 | New-HPOVStorageVolumeTemplate -Capacity 100 -Name SVT-StoreVirt-1 -ProvisionType Thin -Shared
+    Get-HPOVStoragePool Cluster-2 -StorageSystem Cluster-2 | New-HPOVStorageVolumeTemplate -Capacity 100 -Name SVT-StoreVirt-2 -ProvisionType Thin -Shared
+    Get-HPOVStoragePool Cluster-3 -StorageSystem Cluster-3 | New-HPOVStorageVolumeTemplate -Capacity 100 -Name SVT-StoreVirt-3 -ProvisionType Thin -Shared
 
     Write-Output "Storage Configuration Complete" | Timestamp
 }
@@ -631,27 +638,40 @@ Remove-Module -ErrorAction SilentlyContinue HPOneView.300
 Remove-Module -ErrorAction SilentlyContinue HPOneView.310
 Remove-Module -ErrorAction SilentlyContinue HPOneView.400
 Remove-Module -ErrorAction SilentlyContinue HPOneView.410
+Remove-Module -ErrorAction SilentlyContinue HPOneView.420
 
-if (-not (get-module HPOneview.420))
+if (-not (Get-Module HPOneview.500))
 {
-    Import-Module -Name HPOneView.420
+    Import-Module -Name HPOneView.500
 }
 
 if (-not $ConnectedSessions)
 {
-	$Appliance = Read-Host 'ApplianceName'
-	$Username  = Read-Host 'Username'
-	$Password  = Read-Host 'Password' -AsSecureString
+    $ApplianceIP     = Read-Host -Prompt "Synergy Composer IP Address [$OVApplianceIP]"
+    if ([string]::IsNullOrWhiteSpace($ApplianceIP))
+    {
+        $ApplianceIP = $OVApplianceIP
+    }
 
-    Connect-HPOVMgmt -Hostname $Appliance -Username $Username -Password $Password
+    $AdminName       = Read-Host -Prompt "Administrator Username [$OVAdminName]"
+    if ([string]::IsNullOrWhiteSpace($AdminName))
+    {
+        $AdminName   = $OVAdminName
+    }
+
+    $AdminCred       = Get-Credential -UserName $AdminName -Message "Password required for the user '$AdminName'"
+    if ([string]::IsNullOrWhiteSpace($AdminCred))
+    {
+        Write-Output "Blank Credential is not permitted.  Exiting."
+        Exit
+    }
+
+    Connect-HPOVMgmt -Hostname $ApplianceIP -Credential $AdminCred -AuthLoginDomain $OVAuthDomain -ErrorAction Stop
 
     if (-not $ConnectedSessions)
     {
-        Write-Output "Login to Synergy Appliance failed.  Exiting."
+        Write-Output "Login to Synergy System failed.  Exiting."
         Exit
-    }
-    else {
-        Import-HPOVSslCertificate
     }
 }
 
