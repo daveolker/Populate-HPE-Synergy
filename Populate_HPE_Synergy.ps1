@@ -318,8 +318,8 @@ function Create_Server_Profile_Template_SY480_Gen9_RHEL_Local_Boot
 
     $SHT               = Get-HPOVServerHardwareTypes -Name "SY 480 Gen9 1" -ErrorAction Stop
     $EnclGroup         = Get-HPOVEnclosureGroup -Name "EG-Synergy-Local" -ErrorAction Stop
-    $Eth1              = Get-HPOVNetwork -Name "Prod_1101" | New-HPOVServerProfileConnection -ConnectionID 1 -Name 'Prod-1101' -PortId "Mezz 3:1-c"
-    $Eth2              = Get-HPOVNetwork -Name "Prod_1102" | New-HPOVServerProfileConnection -ConnectionID 2 -Name 'Prod-1102' -PortId "Mezz 3:2-c"
+    $Eth1              = Get-HPOVNetworkSet -Name "Prod" | New-HPOVServerProfileConnection -ConnectionID 1 -Name 'Prod-NetworkSet-1' -PortId "Mezz 3:1-c"
+    $Eth2              = Get-HPOVNetworkset -Name "Prod" | New-HPOVServerProfileConnection -ConnectionID 2 -Name 'Prod-NetworkSet-2' -PortId "Mezz 3:2-c"
     $Deploy1           = Get-HPOVNetwork -Name "Deployment" | New-HPOVServerProfileConnection -ConnectionID 3 -Name 'Deployment Network A' -PortId "Mezz 3:1-a" -Bootable -Priority Primary
     $Deploy2           = Get-HPOVNetwork -Name "Deployment" | New-HPOVServerProfileConnection -ConnectionID 4 -Name 'Deployment Network B' -PortId "Mezz 3:2-a" -Bootable -Priority Secondary
     $LogicalDisk       = New-HPOVServerProfileLogicalDisk -Name "SAS RAID1 SSD" -RAID RAID1 -NumberofDrives 2 -DriveType SASSSD -Bootable $True
@@ -378,8 +378,8 @@ function Create_Server_Profile_Template_SY660_Gen9_Windows_SAN_Storage
 
     $SHT               = Get-HPOVServerHardwareTypes -Name "SY 660 Gen9 1" -ErrorAction Stop
     $EnclGroup         = Get-HPOVEnclosureGroup -Name "EG-Synergy-Local" -ErrorAction Stop
-    $Eth1              = Get-HPOVNetwork -Name "Prod_1101" | New-HPOVServerProfileConnection -ConnectionID 1 -Name 'Prod-1101' -PortId "Mezz 3:1-c"
-    $Eth2              = Get-HPOVNetwork -Name "Prod_1102" | New-HPOVServerProfileConnection -ConnectionID 2 -Name 'Prod-1102' -PortId "Mezz 3:2-c"
+    $Eth1              = Get-HPOVNetworkSet -Name "Prod" | New-HPOVServerProfileConnection -ConnectionID 1 -Name 'Prod-NetworkSet-1' -PortId "Mezz 3:1-c"
+    $Eth2              = Get-HPOVNetworkset -Name "Prod" | New-HPOVServerProfileConnection -ConnectionID 2 -Name 'Prod-NetworkSet-2' -PortId "Mezz 3:2-c"
     $FC1               = Get-HPOVNetwork -Name 'SAN A FC' | New-HPOVServerProfileConnection -connectionId 3
     $FC2               = Get-HPOVNetwork -Name 'SAN B FC' | New-HPOVServerProfileConnection -connectionId 4
     $LogicalDisk       = New-HPOVServerProfileLogicalDisk -Name "SAS RAID5 SSD" -RAID RAID5 -NumberofDrives 3 -DriveType SASSSD -Bootable $True
@@ -439,8 +439,8 @@ function Create_Server_Profile_Template_SY480_Gen9_ESX_SAN_Boot
 
     $SHT               = Get-HPOVServerHardwareTypes -Name "SY 480 Gen9 2" -ErrorAction Stop
     $EnclGroup         = Get-HPOVEnclosureGroup -Name "EG-Synergy-Local" -ErrorAction Stop
-    $Eth1              = Get-HPOVNetwork -Name "Prod_1101" | New-HPOVServerProfileConnection -ConnectionID 1 -Name 'Prod-1101' -PortId "Mezz 3:1-c"
-    $Eth2              = Get-HPOVNetwork -Name "Prod_1102" | New-HPOVServerProfileConnection -ConnectionID 2 -Name 'Prod-1102' -PortId "Mezz 3:2-c"
+    $Eth1              = Get-HPOVNetworkSet -Name "Prod" | New-HPOVServerProfileConnection -ConnectionID 1 -Name 'Prod-NetworkSet-1' -PortId "Mezz 3:1-c"
+    $Eth2              = Get-HPOVNetworkset -Name "Prod" | New-HPOVServerProfileConnection -ConnectionID 2 -Name 'Prod-NetworkSet-2' -PortId "Mezz 3:2-c"
     $FC1               = Get-HPOVNetwork -Name 'SAN A FC' | New-HPOVServerProfileConnection -ConnectionID 3 -Bootable -Priority Primary -BootVolumeSource ManagedVolume -ConnectionType FibreChannel
     $FC2               = Get-HPOVNetwork -Name 'SAN B FC' | New-HPOVServerProfileConnection -ConnectionID 4 -Bootable -Priority Secondary -BootVolumeSource ManagedVolume -ConnectionType FibreChannel
     $StoragePool       = Get-HPOVStoragePool -Name FST_CPG1 -StorageSystem ThreePAR-1 -ErrorAction Stop
@@ -498,8 +498,8 @@ function Create_Server_Profile_Template_SY480_Gen10_ESX_SAN_Boot
 
     $SHT               = Get-HPOVServerHardwareTypes -Name "SY 480 Gen10 1" -ErrorAction Stop
     $EnclGroup         = Get-HPOVEnclosureGroup -Name "EG-Synergy-Local" -ErrorAction Stop
-    $Eth1              = Get-HPOVNetwork -Name "Prod_1101" | New-HPOVServerProfileConnection -ConnectionID 1 -Name 'Prod-1101' -PortId "Mezz 3:1-c"
-    $Eth2              = Get-HPOVNetwork -Name "Prod_1102" | New-HPOVServerProfileConnection -ConnectionID 2 -Name 'Prod-1102' -PortId "Mezz 3:2-c"
+    $Eth1              = Get-HPOVNetworkSet -Name "Prod" | New-HPOVServerProfileConnection -ConnectionID 1 -Name 'Prod-NetworkSet-1' -PortId "Mezz 3:1-c"
+    $Eth2              = Get-HPOVNetworkset -Name "Prod" | New-HPOVServerProfileConnection -ConnectionID 2 -Name 'Prod-NetworkSet-2' -PortId "Mezz 3:2-c"
     $FC1               = Get-HPOVNetwork -Name 'SAN A FC' | New-HPOVServerProfileConnection -ConnectionID 3 -Bootable -Priority Primary -BootVolumeSource ManagedVolume -ConnectionType FibreChannel
     $FC2               = Get-HPOVNetwork -Name 'SAN B FC' | New-HPOVServerProfileConnection -ConnectionID 4 -Bootable -Priority Secondary -BootVolumeSource ManagedVolume -ConnectionType FibreChannel
     $StoragePool       = Get-HPOVStoragePool -Name FST_CPG1 -StorageSystem ThreePAR-2 -ErrorAction Stop
