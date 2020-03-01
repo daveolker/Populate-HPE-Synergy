@@ -731,3 +731,5 @@ Create_Enclosure_Group_Remote
 Create_Logical_Enclosure_Remote
 
 Write-Output "HPE Synergy Appliance Configuration Complete" | Timestamp
+
+Disconnect-HPOVMgmt
