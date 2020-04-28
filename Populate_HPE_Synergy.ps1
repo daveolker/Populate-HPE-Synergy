@@ -37,6 +37,29 @@ Param ( [String]$OVApplianceIP                  = "192.168.62.128",
         [String]$OneViewModule                  = "HPOneView.500"
 )
 
+function GetSchematic($ApplianceIP)
+{
+    if ($PSVersionTable.PSVersion.Major -lt 6) {
+        throw "This script requires PowerShell Core Version 6 or later. You are running version " + $PSVersionTable.PSVersion
+    }
+    $response = Invoke-WebRequest -Uri https://$ApplianceIP/dcs-status -SkipCertificateCheck
+    if ($response.Content -match '<Status>(?<status>.+)</Status>') {
+        if ($Matches.status -ne "DCS is Running") {
+            throw "DCS is not running"
+        }
+        if ($response.Content -match '<Schematic_location>(?<schematic>.+)</Schematic_location>') {
+            if ($Matches.schematic -eq "/dcs/schematic/synergy_2encl_c2nitro") {
+                return "Nitro"
+            } elseif ($Matches.schematic -eq "/dcs/schematic/synergy_3encl_demo") {
+                return "Potash"
+            } else {
+                throw "DCS Schematic " + $Matches.schematic + " is not supported by this script"
+            }
+        }
+    } else {
+        throw "DCS Status not found"
+    }
+}
 
 function Add_Remote_Enclosures
 {
@@ -65,20 +88,25 @@ function Configure_SAN_Managers
     Write-Output "Configuring SAN Managers" | Timestamp
     Add-HPOVSanManager -Hostname 172.18.20.1 -SnmpUserName dcs-SHA-AES128 -SnmpAuthLevel AuthAndPriv -SnmpAuthPassword dcsdcsdcs -SnmpAuthProtocol sha -SnmpPrivPassword dcsdcsdcs -SnmpPrivProtocol aes-128 -Type Cisco -Port 161 | Wait-HPOVTaskComplete
     Add-HPOVSanManager -Hostname 172.18.20.2 -SnmpUserName dcs-SHA-AES128 -SnmpAuthLevel AuthAndPriv -SnmpAuthPassword dcsdcsdcs -SnmpAuthProtocol sha -SnmpPrivPassword dcsdcsdcs -SnmpPrivProtocol aes-128 -Type Cisco -Port 161 | Wait-HPOVTaskComplete
+    $password = ConvertTo-SecureString 'dcs' -AsPlainText -Force
+    $credential = New-Object System.Management.Automation.PSCredential('dcs',$password)
+    Add-HPOVSanManager -Hostname 172.18.19.1 -Type BrocadeFOS -Credential $credential -UseSsl | Wait-HPOVTaskComplete
+    Add-HPOVSanManager -Hostname 172.18.19.2 -Type BrocadeFOS -Credential $credential -UseSsl | Wait-HPOVTaskComplete
     Write-Output "SAN Manager Configuration Complete" | Timestamp
 }
 
 
-function Configure_Networks
+function Configure_Networks($schematic)
 {
-    Write-Output "Adding IPv4 Subnets" | Timestamp
-    New-HPOVAddressPoolSubnet -Domain "mgmt.lan" -Gateway $prod_gateway -NetworkId $prod_subnet -SubnetMask $prod_mask
-    New-HPOVAddressPoolSubnet -Domain "deployment.lan" -Gateway $deploy_gateway -NetworkId $deploy_subnet -SubnetMask $deploy_mask
-
-    Write-Output "Adding IPv4 Address Pool Ranges" | Timestamp
-    Get-HPOVAddressPoolSubnet -NetworkId $prod_subnet | New-HPOVAddressPoolRange -Name Mgmt -Start $prod_pool_start -End $prod_pool_end
-    Get-HPOVAddressPoolSubnet -NetworkId $deploy_subnet | New-HPOVAddressPoolRange -Name Deployment -Start $deploy_pool_start -End $deploy_pool_end
-
+    if ($schematic -eq "Potash") {
+        Write-Output "Adding IPv4 Subnets" | Timestamp
+        New-HPOVAddressPoolSubnet -Domain "mgmt.lan" -Gateway $prod_gateway -NetworkId $prod_subnet -SubnetMask $prod_mask
+        New-HPOVAddressPoolSubnet -Domain "deployment.lan" -Gateway $deploy_gateway -NetworkId $deploy_subnet -SubnetMask $deploy_mask
+    
+        Write-Output "Adding IPv4 Address Pool Ranges" | Timestamp
+        Get-HPOVAddressPoolSubnet -NetworkId $prod_subnet | New-HPOVAddressPoolRange -Name Mgmt -Start $prod_pool_start -End $prod_pool_end
+        Get-HPOVAddressPoolSubnet -NetworkId $deploy_subnet | New-HPOVAddressPoolRange -Name Deployment -Start $deploy_pool_start -End $deploy_pool_end
+    }
     Write-Output "Adding Networks" | Timestamp
     New-HPOVNetwork -Name "ESX Mgmt" -MaximumBandwidth 20000 -Purpose Management -Type Ethernet -TypicalBandwidth 2500 -VlanId 1131 -VLANType Tagged
     New-HPOVNetwork -Name "ESX vMotion" -MaximumBandwidth 20000 -Purpose VMMigration -Type Ethernet -TypicalBandwidth 2500 -VlanId 1132 -VLANType Tagged
@@ -92,13 +120,20 @@ function Configure_Networks
     New-HPOVNetwork -Name SVCluster-2 -MaximumBandwidth 20000 -Purpose ISCSI -Type Ethernet -TypicalBandwidth 2500 -VlanId 302 -VLANType Tagged
     New-HPOVNetwork -Name SVCluster-3 -MaximumBandwidth 20000 -Purpose ISCSI -Type Ethernet -TypicalBandwidth 2500 -VlanId 303 -VLANType Tagged
 
-    $Deploy_AddrPool = Get-HPOVAddressPoolSubnet -NetworkId $deploy_subnet
-    Get-HPOVNetwork -Name Deployment | Set-HPOVNetwork -IPv4Subnet $Deploy_AddrPool
-    $Prod_AddrPool = Get-HPOVAddressPoolSubnet -NetworkId $prod_subnet
-    Get-HPOVNetwork -Name Mgmt | Set-HPOVNetwork -IPv4Subnet $Prod_AddrPool
+    if ($schematic -eq "Potash") {
+        $Deploy_AddrPool = Get-HPOVAddressPoolSubnet -NetworkId $deploy_subnet
+        Get-HPOVNetwork -Name Deployment | Set-HPOVNetwork -IPv4Subnet $Deploy_AddrPool
+        $Prod_AddrPool = Get-HPOVAddressPoolSubnet -NetworkId $prod_subnet
+        Get-HPOVNetwork -Name Mgmt | Set-HPOVNetwork -IPv4Subnet $Prod_AddrPool
+    }
 
-    New-HPOVNetwork -Name "SAN A FC" -Type "Fibre Channel" -FabricType FabricAttach -LinkStabilityTime 30 -ManagedSan VSAN20 -MaximumBandwidth 20000 -TypicalBandwidth 8000
-    New-HPOVNetwork -Name "SAN B FC" -Type "Fibre Channel" -FabricType FabricAttach -LinkStabilityTime 30 -ManagedSan VSAN21 -MaximumBandwidth 20000 -TypicalBandwidth 8000
+    if ($schematic -eq "Potash") {
+        New-HPOVNetwork -Name "SAN A FC" -Type "Fibre Channel" -FabricType FabricAttach -LinkStabilityTime 30 -ManagedSan VSAN20 -MaximumBandwidth 20000 -TypicalBandwidth 8000
+        New-HPOVNetwork -Name "SAN B FC" -Type "Fibre Channel" -FabricType FabricAttach -LinkStabilityTime 30 -ManagedSan VSAN21 -MaximumBandwidth 20000 -TypicalBandwidth 8000
+    } elseif ($schematic -eq "Nitro") {
+        New-HPOVNetwork -Name "SAN A FC" -Type "Fibre Channel" -FabricType FabricAttach -LinkStabilityTime 30 -ManagedSan 29:00:7a:2b:21:e0:00:5a 
+        New-HPOVNetwork -Name "SAN B FC" -Type "Fibre Channel" -FabricType FabricAttach -LinkStabilityTime 30 -ManagedSan 29:00:7a:2b:21:e0:00:86 
+    }
     New-HPOVNetwork -Name "SAN A FCoE" -VlanId 10 -ManagedSan VSAN10 -MaximumBandwidth 20000 -Type FCoE -TypicalBandwidth 8000
     New-HPOVNetwork -Name "SAN B FCoE" -VlanId 11 -ManagedSan VSAN11 -MaximumBandwidth 20000 -Type FCoE -TypicalBandwidth 8000
 
@@ -109,7 +144,7 @@ function Configure_Networks
 }
 
 
-function Add_Storage
+function Add_Storage($schematic)
 {
     Write-Output "Adding 3PAR Storage Systems" | Timestamp
     Add-HPOVStorageSystem -Hostname 172.18.11.11 -Password dcs -Username dcs -Domain TestDomain | Wait-HPOVTaskComplete
@@ -129,21 +164,25 @@ function Add_Storage
 
     Write-Output "Adding 3PAR Storage Volumes" | Timestamp
     Get-HPOVStoragePool FST_CPG1 -StorageSystem ThreePAR-1 | New-HPOVStorageVolume -Capacity 200 -Name Demo-Volume-1 | Wait-HPOVTaskComplete
-    Get-HPOVStoragePool FST_CPG1 -StorageSystem ThreePAR-2 | New-HPOVStorageVolume -Capacity 200 -Name Shared-Volume-1 -Shared | Wait-HPOVTaskComplete
-    Get-HPOVStoragePool FST_CPG1 -StorageSystem ThreePAR-2 | New-HPOVStorageVolume -Capacity 200 -Name Shared-Volume-2 -Shared | Wait-HPOVTaskComplete
+    Get-HPOVStoragePool FST_CPG1 -StorageSystem ThreePAR-1 | New-HPOVStorageVolume -Capacity 200 -Name Shared-Volume-1 -Shared | Wait-HPOVTaskComplete
+    Get-HPOVStoragePool FST_CPG1 -StorageSystem ThreePAR-1 | New-HPOVStorageVolume -Capacity 200 -Name Shared-Volume-2 -Shared | Wait-HPOVTaskComplete
 
     Write-Output "Adding StoreVirtual Storage Systems" | Timestamp
     $SVNet1 = Get-HPOVNetwork -Name SVCluster-1 -ErrorAction Stop
     Add-HPOVStorageSystem -Hostname 172.18.30.1 -Family StoreVirtual -Password dcs -Username dcs -VIPS @{ "172.18.30.1" = $SVNet1 } | Wait-HPOVTaskComplete
     $SVNet2 = Get-HPOVNetwork -Name SVCluster-2 -ErrorAction Stop
     Add-HPOVStorageSystem -Hostname 172.18.30.2 -Family StoreVirtual -Password dcs -Username dcs -VIPS @{ "172.18.30.2" = $SVNet2 } | Wait-HPOVTaskComplete
-    $SVNet3 = Get-HPOVNetwork -Name SVCluster-3 -ErrorAction Stop
-    Add-HPOVStorageSystem -Hostname 172.18.30.3 -Family StoreVirtual -Password dcs -Username dcs -VIPS @{ "172.18.30.3" = $SVNet3 } | Wait-HPOVTaskComplete
+    if ($schematic -eq 'Potash') {
+        $SVNet3 = Get-HPOVNetwork -Name SVCluster-3 -ErrorAction Stop
+        Add-HPOVStorageSystem -Hostname 172.18.30.3 -Family StoreVirtual -Password dcs -Username dcs -VIPS @{ "172.18.30.3" = $SVNet3 } | Wait-HPOVTaskComplete
+    }
 
     Write-Output "Adding StoreVirtual Storage Volume Templates" | Timestamp
     Get-HPOVStoragePool Cluster-1 -StorageSystem Cluster-1 | New-HPOVStorageVolumeTemplate -Capacity 100 -Name SVT-StoreVirt-1 -ProvisionType Thin -Shared
     Get-HPOVStoragePool Cluster-2 -StorageSystem Cluster-2 | New-HPOVStorageVolumeTemplate -Capacity 100 -Name SVT-StoreVirt-2 -ProvisionType Thin -Shared
-    Get-HPOVStoragePool Cluster-3 -StorageSystem Cluster-3 | New-HPOVStorageVolumeTemplate -Capacity 100 -Name SVT-StoreVirt-3 -ProvisionType Thin -Shared
+    if ($schematic -eq 'Potash') {
+        Get-HPOVStoragePool Cluster-3 -StorageSystem Cluster-3 | New-HPOVStorageVolumeTemplate -Capacity 100 -Name SVT-StoreVirt-3 -ProvisionType Thin -Shared
+    }
 
     Write-Output "Storage Configuration Complete" | Timestamp
 }
@@ -170,62 +209,91 @@ function Rename_Enclosures
     Write-Output "All Enclosures Renamed" | Timestamp
 }
 
+function Rename_Enclosures_Nitro
+{
+    Write-Output "Renaming Enclosures" | Timestamp
+    $Enc = Get-HPOVEnclosure -Name 0000A66101 -ErrorAction SilentlyContinue
+    Set-HPOVEnclosure -Name Synergy-Encl-1 -Enclosure $Enc | Wait-HPOVTaskComplete
 
-function Create_Uplink_Sets
+    $Enc = Get-HPOVEnclosure -Name 0000A66102 -ErrorAction SilentlyContinue
+    Set-HPOVEnclosure -Name Synergy-Encl-2 -Enclosure $Enc | Wait-HPOVTaskComplete
+
+    Write-Output "All Enclosures Renamed" | Timestamp
+}
+
+function Create_Uplink_Sets($schematic)
 {
     Write-Output "Adding Fibre Channel and FCoE Uplink Sets" | Timestamp
-    $LIGFlex = Get-HPOVLogicalInterconnectGroup -Name "LIG-FlexFabric"
+    $LIGFlex = Get-HPOVLogicalInterconnectGroup -Name "LIG-VCEth"
     $SAN_A_FC = Get-HPOVNetwork -Name "SAN A FC"
-    New-HPOVUplinkSet -Resource $LIGFlex -Name "US-SAN-A-FC" -Type FibreChannel -Networks $SAN_A_FC -UplinkPorts "Enclosure1:BAY3:Q2.1" | Wait-HPOVTaskComplete
+    if ($schematic -eq "Potash") {
+        New-HPOVUplinkSet -Resource $LIGFlex -Name "US-SAN-A-FC" -Type FibreChannel -FCUplinkSpeed 8 -Networks $SAN_A_FC -UplinkPorts "Enclosure1:Bay3:Q2.1" | Wait-HPOVTaskComplete
+    } elseif ($schematic -eq "Nitro") {
+        New-HPOVUplinkSet -Resource $LIGFlex -Name "US-SAN-A-FC" -Type FibreChannel -FCUplinkSpeed 32 -Networks $SAN_A_FC -UplinkPorts "Enclosure1:Bay3:Q2.1" | Wait-HPOVTaskComplete
+    }
 
-    $LIGFlex = Get-HPOVLogicalInterconnectGroup -Name "LIG-FlexFabric"
+    $LIGFlex = Get-HPOVLogicalInterconnectGroup -Name "LIG-VCEth"
     $SAN_B_FC = Get-HPOVNetwork -Name "SAN B FC"
-    New-HPOVUplinkSet -Resource $LIGFlex -Name "US-SAN-B-FC" -Type FibreChannel -Networks $SAN_B_FC -UplinkPorts "Enclosure2:BAY6:Q2.1" | Wait-HPOVTaskComplete
-
-    $LIGFlex = Get-HPOVLogicalInterconnectGroup -Name "LIG-FlexFabric"
+    if ($schematic -eq "Potash") {
+        New-HPOVUplinkSet -Resource $LIGFlex -Name "US-SAN-B-FC" -Type FibreChannel -FCUplinkSpeed 8 -Networks $SAN_B_FC -UplinkPorts "Enclosure2:Bay6:Q2.1" | Wait-HPOVTaskComplete
+    } elseif ($schematic -eq "Nitro") {
+        New-HPOVUplinkSet -Resource $LIGFlex -Name "US-SAN-B-FC" -Type FibreChannel -FCUplinkSpeed 32 -Networks $SAN_B_FC -UplinkPorts "Enclosure2:Bay6:Q2.1" | Wait-HPOVTaskComplete        
+    }
+    $LIGFlex = Get-HPOVLogicalInterconnectGroup -Name "LIG-VCEth"
     $SAN_A_FCoE = Get-HPOVNetwork -Name "SAN A FCoE"
-    New-HPOVUplinkSet -Resource $LIGFlex -Name "US-SAN-A-FCoE" -Type Ethernet -Networks $SAN_A_FCoE -UplinkPorts "Enclosure1:BAY3:Q1.1" -LacpTimer Short | Wait-HPOVTaskComplete
+    New-HPOVUplinkSet -Resource $LIGFlex -Name "US-SAN-A-FCoE" -Type Ethernet -Networks $SAN_A_FCoE -UplinkPorts "Enclosure1:Bay3:Q1.1" -LacpTimer Short | Wait-HPOVTaskComplete
 
-    $LIGFlex = Get-HPOVLogicalInterconnectGroup -Name "LIG-FlexFabric"
+    $LIGFlex = Get-HPOVLogicalInterconnectGroup -Name "LIG-VCEth"
     $SAN_B_FCoE = Get-HPOVNetwork -Name "SAN B FCoE"
-    New-HPOVUplinkSet -Resource $LIGFlex -Name "US-SAN-B-FCoE" -Type Ethernet -Networks $SAN_B_FCoE -UplinkPorts "Enclosure2:BAY6:Q1.1" -LacpTimer Short | Wait-HPOVTaskComplete
+    New-HPOVUplinkSet -Resource $LIGFlex -Name "US-SAN-B-FCoE" -Type Ethernet -Networks $SAN_B_FCoE -UplinkPorts "Enclosure2:Bay6:Q1.1" -LacpTimer Short | Wait-HPOVTaskComplete
 
-    Write-Output "Adding FlexFabric Uplink Sets" | Timestamp
-    $LIGFlex = Get-HPOVLogicalInterconnectGroup -Name "LIG-FlexFabric"
+    Write-Output "Adding Ethernet Uplink Sets" | Timestamp
+    $LIGFlex = Get-HPOVLogicalInterconnectGroup -Name "LIG-VCEth"
     $ESX_Mgmt = Get-HPOVNetwork -Name "ESX Mgmt"
     New-HPOVUplinkSet -Resource $LIGFlex -Name "US-ESX-Mgmt" -Type Ethernet -Networks $ESX_Mgmt -UplinkPorts "Enclosure1:Bay3:Q1.2","Enclosure2:Bay6:Q1.2" | Wait-HPOVTaskComplete
 
-    $LIGFlex = Get-HPOVLogicalInterconnectGroup -Name "LIG-FlexFabric"
+    $LIGFlex = Get-HPOVLogicalInterconnectGroup -Name "LIG-VCEth"
     $ESX_vMotion = Get-HPOVNetwork -Name "ESX vMotion"
     New-HPOVUplinkSet -Resource $LIGFlex -Name "US-ESX-vMotion" -Type Ethernet -Networks $ESX_vMotion -UplinkPorts "Enclosure1:Bay3:Q1.3","Enclosure2:Bay6:Q1.3" | Wait-HPOVTaskComplete
 
-    $LIGFlex = Get-HPOVLogicalInterconnectGroup -Name "LIG-FlexFabric"
+    $LIGFlex = Get-HPOVLogicalInterconnectGroup -Name "LIG-VCEth"
     $Prod_Nets = Get-HPOVNetwork -Name "Prod*"
     New-HPOVUplinkSet -Resource $LIGFlex -Name "US-Prod" -Type Ethernet -Networks $Prod_Nets -UplinkPorts "Enclosure1:Bay3:Q1.4","Enclosure2:Bay6:Q1.4" | Wait-HPOVTaskComplete
 
-    Write-Output "Adding ImageStreamer Uplink Sets" | Timestamp
-    $ImageStreamerDeploymentNetworkObject = Get-HPOVNetwork -Name "Deployment" -ErrorAction Stop
-    Get-HPOVLogicalInterconnectGroup -Name "LIG-FlexFabric" -ErrorAction Stop | New-HPOVUplinkSet -Name "US-Image Streamer" -Type ImageStreamer -Networks $ImageStreamerDeploymentNetworkObject -UplinkPorts "Enclosure1:Bay3:Q5.1","Enclosure1:Bay3:Q6.1","Enclosure2:Bay6:Q5.1","Enclosure2:Bay6:Q6.1" | Wait-HPOVTaskComplete
+    if ($schematic -eq "Potash") {
+        Write-Output "Adding ImageStreamer Uplink Sets" | Timestamp
+        $ImageStreamerDeploymentNetworkObject = Get-HPOVNetwork -Name "Deployment" -ErrorAction Stop
+        Get-HPOVLogicalInterconnectGroup -Name "LIG-VCEth" -ErrorAction Stop | New-HPOVUplinkSet -Name "US-Image Streamer" -Type ImageStreamer -Networks $ImageStreamerDeploymentNetworkObject -UplinkPorts "Enclosure1:Bay3:Q5.1","Enclosure1:Bay3:Q6.1","Enclosure2:Bay6:Q5.1","Enclosure2:Bay6:Q6.1" | Wait-HPOVTaskComplete
+    }
 
     Write-Output "All Uplink Sets Configured" | Timestamp
 }
 
 
-function Create_Enclosure_Group
+function Create_Enclosure_Group($schematic)
 {
-    $3FrameVCLIG = Get-HPOVLogicalInterconnectGroup -Name LIG-FlexFabric
-    $SasLIG = Get-HPOVLogicalInterconnectGroup -Name LIG-SAS
-    $FcLIG = Get-HPOVLogicalInterconnectGroup -Name LIG-FC
-    New-HPOVEnclosureGroup -name "EG-Synergy-Local" -LogicalInterconnectGroupMapping @{Frame1 = $3FrameVCLIG,$SasLIG,$FcLIG; Frame2 = $3FrameVCLIG,$SasLIG,$FcLIG; Frame3 = $3FrameVCLIG,$SasLIG,$FcLIG} -EnclosureCount 3 -IPv4AddressType External -DeploymentNetworkType Internal
+    if ($schematic -eq "Potash") {
+        $3FrameVCLIG = Get-HPOVLogicalInterconnectGroup -Name LIG-VCEth
+        $SasLIG = Get-HPOVLogicalInterconnectGroup -Name LIG-SAS
+        $FcLIG = Get-HPOVLogicalInterconnectGroup -Name LIG-FC
+        New-HPOVEnclosureGroup -name "EG-Synergy-Local" -LogicalInterconnectGroupMapping @{Frame1 = $3FrameVCLIG,$SasLIG,$FcLIG; Frame2 = $3FrameVCLIG,$SasLIG,$FcLIG; Frame3 = $3FrameVCLIG,$SasLIG,$FcLIG} -EnclosureCount 3 -IPv4AddressType External -DeploymentNetworkType Internal
+    } elseif ($schematic -eq "Nitro") {
+        $2FrameVCLIG = Get-HPOVLogicalInterconnectGroup -Name LIG-VCEth
+        $SasLIG = Get-HPOVLogicalInterconnectGroup -Name LIG-SAS
+        $FC16LIG = Get-HPOVLogicalInterconnectGroup -Name LIG-FC16
+        $FC32LIG = Get-HPOVLogicalInterconnectGroup -Name LIG-FC32
+        $FC32LIG_Single = Get-HPOVLogicalInterconnectGroup -Name LIG-FC32-Single
+        New-HPOVEnclosureGroup -name "EG-Synergy-Local" -LogicalInterconnectGroupMapping @{Frame1 = $2FrameVCLIG,$FC16LIG,$FC32LIG; Frame2 = $2FrameVCLIG,$FC32LIG_Single,$SasLIG} -EnclosureCount 2 -IPv4AddressType External
 
+    }
     Write-Output "Enclosure Group Created" | Timestamp
 }
 
 
 function Create_Enclosure_Group_Remote
 {
-    $2FrameVCLIG_1 = Get-HPOVLogicalInterconnectGroup -Name LIG-FlexFabric-Remote-1
-    $2FrameVCLIG_2 = Get-HPOVLogicalInterconnectGroup -Name LIG-FlexFabric-Remote-2
+    $2FrameVCLIG_1 = Get-HPOVLogicalInterconnectGroup -Name LIG-VCEth-Remote-1
+    $2FrameVCLIG_2 = Get-HPOVLogicalInterconnectGroup -Name LIG-VCEth-Remote-2
     $FcLIG = Get-HPOVLogicalInterconnectGroup -Name LIG-FC-Remote
     New-HPOVEnclosureGroup -name "EG-Synergy-Remote" -LogicalInterconnectGroupMapping @{Frame1 = $FcLIG,$2FrameVCLIG_1,$2FrameVCLIG_2; Frame2 = $FcLIG,$2FrameVCLIG_1,$2FrameVCLIG_2} -EnclosureCount 2
 
@@ -253,12 +321,20 @@ function Create_Logical_Enclosure_Remote
 }
 
 
-function Create_Logical_Interconnect_Groups
+function Create_Logical_Interconnect_Groups($schematic)
 {
     Write-Output "Creating Local Logical Interconnect Groups" | Timestamp
-    New-HPOVLogicalInterconnectGroup -Name "LIG-SAS" -FrameCount 1 -InterconnectBaySet 1 -FabricModuleType "SAS" -Bays @{Frame1 = @{Bay1 = "SE12SAS" ; Bay4 = "SE12SAS"}}
-    New-HPOVLogicalInterconnectGroup -Name "LIG-FC" -FrameCount 1 -InterconnectBaySet 2 -FabricModuleType "SEVCFC" -Bays @{Frame1 = @{Bay2 = "SEVC16GbFC" ; Bay5 = "SEVC16GbFC"}}
-    New-HPOVLogicalInterconnectGroup -Name "LIG-FlexFabric" -FrameCount 3 -InterconnectBaySet 3 -FabricModuleType "SEVC40F8" -Bays @{Frame1 = @{Bay3 = "SEVC40f8" ; Bay6 = "SE20ILM"};Frame2 = @{Bay3 = "SE20ILM"; Bay6 = "SEVC40f8" };Frame3 = @{Bay3 = "SE20ILM"; Bay6 = "SE20ILM"}} -FabricRedundancy "HighlyAvailable"
+    if ($schematic -eq "Potash") {
+        New-HPOVLogicalInterconnectGroup -Name "LIG-SAS" -FrameCount 1 -InterconnectBaySet 1 -FabricModuleType "SAS" -Bays @{Frame1 = @{Bay1 = "SE12SAS" ; Bay4 = "SE12SAS"}}
+        New-HPOVLogicalInterconnectGroup -Name "LIG-FC" -FrameCount 1 -InterconnectBaySet 2 -FabricModuleType "SEVCFC" -Bays @{Frame1 = @{Bay2 = "SEVC16GbFC" ; Bay5 = "SEVC16GbFC"}}
+        New-HPOVLogicalInterconnectGroup -Name "LIG-VCEth" -FrameCount 3 -InterconnectBaySet 3 -FabricModuleType "SEVC40F8" -Bays @{Frame1 = @{Bay3 = "SEVC40f8" ; Bay6 = "SE20ILM"};Frame2 = @{Bay3 = "SE20ILM"; Bay6 = "SEVC40f8" };Frame3 = @{Bay3 = "SE20ILM"; Bay6 = "SE20ILM"}} -FabricRedundancy "HighlyAvailable"
+    } elseif ($schematic -eq "Nitro") {
+        New-HPOVLogicalInterconnectGroup -Name "LIG-SAS" -FrameCount 1 -InterconnectBaySet 1 -FabricModuleType "SAS" -Bays @{Frame1 = @{Bay1 = "SE12SAS" ; Bay4 = "SE12SAS"}}
+        New-HPOVLogicalInterconnectGroup -Name "LIG-FC16" -FrameCount 1 -InterconnectBaySet 1 -FabricModuleType "SEVCFC" -Bays @{Frame1 = @{Bay1 = "SEVC16GbFC" ; Bay4 = "SEVC16GbFC"}}
+        New-HPOVLogicalInterconnectGroup -Name "LIG-FC32" -FrameCount 1 -InterconnectBaySet 2 -FabricModuleType "SEVCFC" -Bays @{Frame1 = @{Bay2 = "SEVC32GbFC" ; Bay5 = "SEVC32GbFC"}}
+        New-HPOVLogicalInterconnectGroup -Name "LIG-FC32-Single" -FrameCount 1 -InterconnectBaySet 2 -FabricModuleType "SEVCFC" -Bays @{Frame1 = @{Bay2 = "SEVC32GbFC" }} -FabricRedundancy ASide
+        New-HPOVLogicalInterconnectGroup -Name "LIG-VCEth" -FrameCount 2 -InterconnectBaySet 3 -FabricModuleType "SEVC100F32" -DownlinkSpeedMode 50 -Bays @{Frame1 = @{Bay3 = "SEVC100f32" ; Bay6 = "SE50ILM"};Frame2 = @{Bay3 = "SE50ILM"; Bay6 = "SEVC100f32" }} -FabricRedundancy "HighlyAvailable"
+    }
     Write-Output "Logical Interconnect Groups Created" | Timestamp
 }
 
@@ -267,8 +343,8 @@ function Create_Logical_Interconnect_Groups_Remote
 {
     Write-Output "Creating Remote Logical Interconnect Groups" | Timestamp
     New-HPOVLogicalInterconnectGroup -Name "LIG-FC-Remote" -FrameCount 1 -InterconnectBaySet 1 -FabricModuleType "SEVCFC" -Bays @{Frame1 = @{Bay1 = "SEVC16GbFC" ; Bay4 = "SEVC16GbFC"}}
-    New-HPOVLogicalInterconnectGroup -Name "LIG-FlexFabric-Remote-1" -FrameCount 2 -InterconnectBaySet 2 -FabricModuleType "SEVC40F8" -Bays @{Frame1 = @{Bay2 = "SEVC40f8" ; Bay5 = "SE20ILM"};Frame2 = @{Bay2 = "SE20ILM"; Bay5 = "SEVC40F8" }} -FabricRedundancy "HighlyAvailable"
-    New-HPOVLogicalInterconnectGroup -Name "LIG-FlexFabric-Remote-2" -FrameCount 2 -InterconnectBaySet 3 -FabricModuleType "SEVC40F8" -Bays @{Frame1 = @{Bay3 = "SEVC40f8" ; Bay6 = "SE20ILM"};Frame2 = @{Bay3 = "SE20ILM"; Bay6 = "SEVC40F8" }} -FabricRedundancy "HighlyAvailable"
+    New-HPOVLogicalInterconnectGroup -Name "LIG-VCEth-Remote-1" -FrameCount 2 -InterconnectBaySet 2 -FabricModuleType "SEVC40F8" -Bays @{Frame1 = @{Bay2 = "SEVC40f8" ; Bay5 = "SE20ILM"};Frame2 = @{Bay2 = "SE20ILM"; Bay5 = "SEVC40F8" }} -FabricRedundancy "HighlyAvailable"
+    New-HPOVLogicalInterconnectGroup -Name "LIG-VCEth-Remote-2" -FrameCount 2 -InterconnectBaySet 3 -FabricModuleType "SEVC40F8" -Bays @{Frame1 = @{Bay3 = "SEVC40f8" ; Bay6 = "SE20ILM"};Frame2 = @{Bay3 = "SE20ILM"; Bay6 = "SEVC40F8" }} -FabricRedundancy "HighlyAvailable"
     Write-Output "Logical Interconnect Groups Created" | Timestamp
 }
 
@@ -372,6 +448,63 @@ function Create_Server_Profile_SY480_Gen9_RHEL_Local_Boot
 }
 
 
+function Create_Server_Profile_Template_SY480_Gen10_RHEL_Local_Boot
+{
+    Write-Output "Creating SY480 Gen10 with Local Boot for RHEL Server Profile Template" | Timestamp
+
+    $SHT               = Get-HPOVServerHardwareTypes -Name "SY 480 Gen10 2" -ErrorAction Stop
+    $EnclGroup         = Get-HPOVEnclosureGroup -Name "EG-Synergy-Local" -ErrorAction Stop
+    $Eth1              = Get-HPOVNetwork -Name "Prod_1101" | New-HPOVServerProfileConnection -ConnectionID 1 -Name 'Prod-1101' -PortId "Mezz 3:1-c"
+    $Eth2              = Get-HPOVNetwork -Name "Prod_1102" | New-HPOVServerProfileConnection -ConnectionID 2 -Name 'Prod-1102' -PortId "Mezz 3:2-c"
+    $LogicalDisk       = New-HPOVServerProfileLogicalDisk -Name "SAS RAID1" -RAID RAID1 -NumberofDrives 2 -Bootable $True
+    $StorageController = New-HPOVServerProfileLogicalDiskController -ControllerID Embedded -Mode RAID -Initialize -LogicalDisk $LogicalDisk
+
+    $params = @{
+        Affinity                 = "Bay";
+        BootMode                 = "BIOS";
+        BootOrder                = "HardDisk";
+        Connections              = $Eth1, $Eth2;
+        Description              = "Server Profile Template for HPE Synergy 480 Gen10 Compute Module with Local Boot for RHEL";
+        EnclosureGroup           = $EnclGroup;
+        Firmware                 = $False;
+        FirmwareMode             = "FirmwareOffline";
+        HideUnusedFlexNics       = $True;
+        LocalStorage             = $True;
+        HostOStype               = "RHEL";
+        ManageBoot               = $True;
+        Name                     = "HPE Synergy 480 Gen10 with Local Boot for RHEL Template";
+        SANStorage               = $False;
+        ServerHardwareType       = $SHT;
+        ServerProfileDescription = "Server Profile for HPE Synergy 480 Gen10 Compute Module with Local Boot for RHEL";
+        StorageController        = $StorageController;
+        StorageVolume            = $LogicalDisk
+    }
+
+    New-HPOVServerProfileTemplate @params | Wait-HPOVTaskComplete
+    Write-Output "SY480 Gen10 with Local Boot for RHEL Server Profile Template Created" | Timestamp
+}
+
+
+function Create_Server_Profile_SY480_Gen10_RHEL_Local_Boot
+{
+    Write-Output "Creating SY480 Gen10 Local Boot for RHEL Server Profile" | Timestamp
+
+    $SHT            = Get-HPOVServerHardwareTypes -Name "SY 480 Gen10 2" -ErrorAction Stop
+    $Template       = Get-HPOVServerProfileTemplate -Name "HPE Synergy 480 Gen10 with Local Boot for RHEL Template" -ErrorAction Stop
+    $Server         = Get-HPOVServer -ServerHardwareType $SHT -NoProfile -ErrorAction Stop | Select-Object -First 1
+
+    $params = @{
+        AssignmentType        = "Server";
+        Description           = "HPE Synergy 480 Gen10 Server with Local Boot for RHEL";
+        Name                  = "SY480-Gen10-RHEL-Local-Boot";
+        Server                = $Server;
+        ServerProfileTemplate = $Template
+    }
+
+    New-HPOVServerProfile @params | Wait-HPOVTaskComplete
+    Write-Output "SY480 Gen10 Local Boot for RHEL Server Profile Created" | Timestamp
+}
+
 function Create_Server_Profile_Template_SY660_Gen9_Windows_SAN_Storage
 {
     Write-Output "Creating SY660 Gen9 with Local Boot and SAN Storage for Windows Server Profile Template" | Timestamp
@@ -430,6 +563,65 @@ function Create_Server_Profile_SY660_Gen9_Windows_SAN_Storage
 
     New-HPOVServerProfile @params | Wait-HPOVTaskComplete
     Write-Output "SY660 Gen9 with Local Boot and SAN Storage for Windows Server Profile Created" | Timestamp
+}
+
+function Create_Server_Profile_Template_SY660_Gen10_Windows_SAN_Storage
+{
+    Write-Output "Creating SY660 Gen10 with Local Boot and SAN Storage for Windows Server Profile Template" | Timestamp
+
+    $SHT               = Get-HPOVServerHardwareTypes -Name "SY 660 Gen10 1" -ErrorAction Stop
+    $EnclGroup         = Get-HPOVEnclosureGroup -Name "EG-Synergy-Local" -ErrorAction Stop
+    $Eth1              = Get-HPOVNetwork -Name "Prod_1101" | New-HPOVServerProfileConnection -ConnectionID 1 -Name 'Prod-1101' -PortId "Mezz 3:1-c"
+    $Eth2              = Get-HPOVNetwork -Name "Prod_1102" | New-HPOVServerProfileConnection -ConnectionID 2 -Name 'Prod-1102' -PortId "Mezz 3:2-c"
+    $FC1               = Get-HPOVNetwork -Name 'SAN A FCoE' | New-HPOVServerProfileConnection -connectionId 3
+    $FC2               = Get-HPOVNetwork -Name 'SAN B FCoE' | New-HPOVServerProfileConnection -connectionId 4
+    $LogicalDisk       = New-HPOVServerProfileLogicalDisk -Name "SAS RAID5" -RAID RAID5 -NumberofDrives 3 -Bootable $True
+    $SANVol            = Get-HPOVStorageVolume -Name "Shared-Volume-2" | New-HPOVServerProfileAttachVolume -VolumeID 1
+    $StorageController = New-HPOVServerProfileLogicalDiskController -ControllerID Embedded -Mode RAID -Initialize -LogicalDisk $LogicalDisk
+
+    $params = @{
+        Affinity                 = "Bay";
+        BootMode                 = "BIOS";
+        BootOrder                = "HardDisk";
+        Connections              = $Eth1, $Eth2, $FC1, $FC2;
+        Description              = "Server Profile Template for HPE Synergy 660 Gen10 Compute Module with Local Boot and SAN Storage for Windows";
+        EnclosureGroup           = $EnclGroup;
+        Firmware                 = $False;
+        FirmwareMode             = "FirmwareOffline";
+        HideUnusedFlexNics       = $True;
+        LocalStorage             = $True;
+        HostOStype               = "Win2k12";
+        ManageBoot               = $True;
+        Name                     = "HPE Synergy 660 Gen10 with Local Boot and SAN Storage for Windows Template";
+        SANStorage               = $True;
+        ServerHardwareType       = $SHT;
+        ServerProfileDescription = "Server Profile for HPE Synergy 660 Gen10 Compute Module with Local Boot and SAN Storage for Windows";
+        StorageController        = $StorageController;
+        StorageVolume            = $SANVol
+    }
+
+    New-HPOVServerProfileTemplate @params | Wait-HPOVTaskComplete
+    Write-Output "SY660 Gen10 with Local Boot and SAN Storage for Windows Server Profile Template Created" | Timestamp
+}
+
+function Create_Server_Profile_SY660_Gen10_Windows_SAN_Storage
+{
+    Write-Output "Creating SY660 Gen10 with Local Boot and SAN Storage for Windows Server Profile" | Timestamp
+
+    $SHT            = Get-HPOVServerHardwareTypes -Name "SY 660 Gen10 1" -ErrorAction Stop
+    $Template       = Get-HPOVServerProfileTemplate -Name "HPE Synergy 660 Gen10 with Local Boot and SAN Storage for Windows Template" -ErrorAction Stop
+    $Server         = Get-HPOVServer -ServerHardwareType $SHT -NoProfile -ErrorAction Stop | Select-Object -First 1
+
+    $params = @{
+        AssignmentType        = "Server";
+        Description           = "HPE Synergy 660 Gen10 Server with Local Boot and SAN Storage for Windows";
+        Name                  = "SY660-Gen10-Windows-Local-Boot-and-SAN-Storage";
+        Server                = $Server;
+        ServerProfileTemplate = $Template
+    }
+
+    New-HPOVServerProfile @params | Wait-HPOVTaskComplete
+    Write-Output "SY660 Gen10 with Local Boot and SAN Storage for Windows Server Profile Created" | Timestamp
 }
 
 
@@ -500,9 +692,9 @@ function Create_Server_Profile_Template_SY480_Gen10_ESX_SAN_Boot
     $EnclGroup         = Get-HPOVEnclosureGroup -Name "EG-Synergy-Local" -ErrorAction Stop
     $Eth1              = Get-HPOVNetwork -Name "Prod_1101" | New-HPOVServerProfileConnection -ConnectionID 1 -Name 'Prod-1101' -PortId "Mezz 3:1-c"
     $Eth2              = Get-HPOVNetwork -Name "Prod_1102" | New-HPOVServerProfileConnection -ConnectionID 2 -Name 'Prod-1102' -PortId "Mezz 3:2-c"
-    $FC1               = Get-HPOVNetwork -Name 'SAN A FC' | New-HPOVServerProfileConnection -ConnectionID 3 -Bootable -Priority Primary -BootVolumeSource ManagedVolume -ConnectionType FibreChannel
-    $FC2               = Get-HPOVNetwork -Name 'SAN B FC' | New-HPOVServerProfileConnection -ConnectionID 4 -Bootable -Priority Secondary -BootVolumeSource ManagedVolume -ConnectionType FibreChannel
-    $StoragePool       = Get-HPOVStoragePool -Name FST_CPG1 -StorageSystem ThreePAR-2 -ErrorAction Stop
+    $FC1               = Get-HPOVNetwork -Name 'SAN A FCoE' | New-HPOVServerProfileConnection -ConnectionID 3 -Bootable -Priority Primary -BootVolumeSource ManagedVolume -ConnectionType FibreChannel
+    $FC2               = Get-HPOVNetwork -Name 'SAN B FCoE' | New-HPOVServerProfileConnection -ConnectionID 4 -Bootable -Priority Secondary -BootVolumeSource ManagedVolume -ConnectionType FibreChannel
+    $StoragePool       = Get-HPOVStoragePool -Name FST_CPG1 -StorageSystem ThreePAR-1 -ErrorAction Stop
     $SANVol            = New-HPOVServerProfileAttachVolume -Name BootVol-Gen10 -StoragePool $StoragePool -BootVolume -Capacity 100 -LunIdType Auto
 
     #
@@ -675,59 +867,83 @@ if (-not $ConnectedSessions)
     }
 }
 
-filter Timestamp {"$(Get-Date -Format G): $_"}
-
-
-##########################################################################
-#
-# Process variables in the Populate_HPE_Synergy-Params.txt file.
-#
-##########################################################################
-New-Variable -Name config_file -Value .\Populate_HPE_Synergy-Params.txt -Scope Global -Force
-
-if (Test-Path $config_file) {
-    Get-Content $config_file | Where-Object { !$_.StartsWith("#") } | Foreach-Object {
-        $var = $_.Split('=')
-        New-Variable -Name $var[0] -Value $var[1] -Scope Global -Force
-    }
-} else {
-    Write-Output "Configuration file '$config_file' not found.  Exiting." | Timestamp
+try {
+    $schematic = GetSchematic($ApplianceIP)
+}
+catch {
+    Write-Error $_
     Exit
 }
 
-
+filter Timestamp {"$(Get-Date -Format G): $_"}
 Write-Output "Configuring HPE Synergy Appliance" | Timestamp
+
+if ($schematic -eq "Potash") {
+    ##########################################################################
+    #
+    # Process variables in the Populate_HPE_Synergy-Params.txt file.
+    #
+    ##########################################################################
+    New-Variable -Name config_file -Value .\Populate_HPE_Synergy-Params.txt -Scope Global -Force
+
+    if (Test-Path $config_file) {
+        Get-Content $config_file | Where-Object { !$_.StartsWith("#") } | Foreach-Object {
+            $var = $_.Split('=')
+            New-Variable -Name $var[0] -Value $var[1] -Scope Global -Force
+        }
+    } else {
+        Write-Output "Configuration file '$config_file' not found.  Exiting." | Timestamp
+        Exit
+    }
+}
 
 Add_Firmware_Bundle
 Add_Licenses
 Configure_Address_Pools
-Add_Remote_Enclosures
-Rename_Enclosures
+if ($schematic -eq "Potash") {
+    Add_Remote_Enclosures
+    Rename_Enclosures
+} else {
+    Rename_Enclosures_Nitro
+}
 PowerOff_All_Servers
 Configure_SAN_Managers
-Configure_Networks
-Add_Storage
+Configure_Networks($schematic)
+Add_Storage($schematic)
 Add_Users
-Create_OS_Deployment_Server
-Create_Logical_Interconnect_Groups
-Create_Uplink_Sets
-Create_Enclosure_Group
+if ($schematic -eq "Potash") {
+    Create_OS_Deployment_Server
+}
+Create_Logical_Interconnect_Groups($schematic)
+Create_Uplink_Sets($schematic)
+Create_Enclosure_Group($schematic)
 Create_Logical_Enclosure
 Add_Scopes
-Create_Server_Profile_Template_SY480_Gen9_RHEL_Local_Boot
-Create_Server_Profile_Template_SY660_Gen9_Windows_SAN_Storage
-Create_Server_Profile_Template_SY480_Gen9_ESX_SAN_Boot
+if ($schematic -eq "Potash") {
+    Create_Server_Profile_Template_SY480_Gen9_RHEL_Local_Boot
+    Create_Server_Profile_Template_SY660_Gen9_Windows_SAN_Storage
+    Create_Server_Profile_Template_SY480_Gen9_ESX_SAN_Boot
+} elseif ($schematic -eq "Nitro") {
+    Create_Server_Profile_Template_SY480_Gen10_RHEL_Local_Boot
+    Create_Server_Profile_Template_SY660_Gen10_Windows_SAN_Storage
+}
 Create_Server_Profile_Template_SY480_Gen10_ESX_SAN_Boot
-Create_Server_Profile_SY480_Gen9_RHEL_Local_Boot
-Create_Server_Profile_SY660_Gen9_Windows_SAN_Storage
-Create_Server_Profile_SY480_Gen9_ESX_SAN_Boot
+if ($schematic -eq "Potash") {
+    Create_Server_Profile_SY480_Gen9_RHEL_Local_Boot
+    Create_Server_Profile_SY660_Gen9_Windows_SAN_Storage
+    Create_Server_Profile_SY480_Gen9_ESX_SAN_Boot
+} elseif ($schematic -eq "Nitro") {
+    Create_Server_Profile_SY480_Gen10_RHEL_Local_Boot
+    Create_Server_Profile_SY660_Gen10_Windows_SAN_Storage
+}
 Create_Server_Profile_SY480_Gen10_ESX_SAN_Boot
 
-#
-# Add Second Enclosure Group for Remote Enclosures
-#
-Create_Logical_Interconnect_Groups_Remote
-Create_Enclosure_Group_Remote
-Create_Logical_Enclosure_Remote
-
+if ($schematic -eq "Potash") {
+    #
+    # Add Second Enclosure Group for Remote Enclosures
+    #
+    Create_Logical_Interconnect_Groups_Remote
+    Create_Enclosure_Group_Remote
+    Create_Logical_Enclosure_Remote
+}
 Write-Output "HPE Synergy Appliance Configuration Complete" | Timestamp
