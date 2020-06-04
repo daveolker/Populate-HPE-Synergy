@@ -613,9 +613,10 @@ Remove-Module -ErrorAction SilentlyContinue HPOneView.310
 Remove-Module -ErrorAction SilentlyContinue HPOneView.400
 Remove-Module -ErrorAction SilentlyContinue HPOneView.410
 Remove-Module -ErrorAction SilentlyContinue HPOneView.420
+Remove-Module -ErrorAction SilentlyContinue HPOneView.500
 
-if (-not (Get-Module HPOneview.500)) {
-    Import-Module -Name HPOneView.500
+if (-not (Get-Module HPOneview.520)) {
+    Import-Module -Name HPOneView.520
 }
 
 if (-not $ConnectedSessions) {
