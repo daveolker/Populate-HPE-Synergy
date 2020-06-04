@@ -3,7 +3,7 @@
 #
 # - Example script for configuring the HPE Synergy Appliance
 #
-#   VERSION 5.0
+#   VERSION 5.20
 #
 #   AUTHORS
 #   Dave Olker - HPE Storage and Big Data
