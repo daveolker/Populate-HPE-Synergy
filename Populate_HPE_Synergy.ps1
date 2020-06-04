@@ -652,7 +652,7 @@ filter Timestamp { "$(Get-Date -Format G): $_" }
 # Process variables in the Populate_HPE_Synergy-Params.txt file.
 #
 ##########################################################################
-New-Variable -Name config_file -Value .\Populate_HPE_Synergy-Params.txt -Scope Global -Force
+New-Variable -Name config_file -Value $PSScriptRoot\Populate_HPE_Synergy-Params.txt -Scope Global -Force
 
 if (Test-Path $config_file) {
     Get-Content $config_file | Where-Object { !$_.StartsWith("#") } | Foreach-Object {
