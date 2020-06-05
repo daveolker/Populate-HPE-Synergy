@@ -68,7 +68,8 @@ function Configure_SAN_Managers {
 
 function Configure_Networks {
     Write-Output "Adding IPv4 Subnets" | Timestamp
-    New-HPOVAddressPoolSubnet -Domain "mgmt.lan" -Gateway $prod_gateway -NetworkId $prod_subnet -SubnetMask $prod_mask
+    #New-HPOVAddressPoolSubnet -Domain "mgmt.lan" -Gateway $prod_gateway -NetworkId $prod_subnet -SubnetMask $prod_mask
+    Get-HPOVAddressPoolSubnet -NetworkId $prod_subnet | Set-HPOVAddressPoolSubnet -Domain "mgmt.lan" 
     New-HPOVAddressPoolSubnet -Domain "deployment.lan" -Gateway $deploy_gateway -NetworkId $deploy_subnet -SubnetMask $deploy_mask
 
     Write-Output "Adding IPv4 Address Pool Ranges" | Timestamp
@@ -661,7 +662,7 @@ if (Test-Path $config_file) {
     }
 }
 else {
-    Write-Output "Configuration file '$config_file' not found.  Exiting." | Timestamp
+    Write-warning "Configuration file '$config_file' not found.  Exiting."  | Timestamp
     Exit
 }
 
