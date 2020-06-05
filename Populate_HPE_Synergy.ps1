@@ -197,9 +197,9 @@ function Create_Uplink_Sets {
     $Prod_Nets = Get-HPOVNetwork -Name "Prod*"
     New-HPOVUplinkSet -Resource $LIGFlex -Name "US-Prod" -Type Ethernet -Networks $Prod_Nets -UplinkPorts "Enclosure1:Bay3:Q1.4", "Enclosure2:Bay6:Q1.4" | Wait-HPOVTaskComplete
 
-    Write-Output "Adding ImageStreamer Uplink Sets" | Timestamp
-    $ImageStreamerDeploymentNetworkObject = Get-HPOVNetwork -Name "Deployment" -ErrorAction Stop
-    Get-HPOVLogicalInterconnectGroup -Name "LIG-FlexFabric" -ErrorAction Stop | New-HPOVUplinkSet -Name "US-Image Streamer" -Type ImageStreamer -Networks $ImageStreamerDeploymentNetworkObject -UplinkPorts "Enclosure1:Bay3:Q5.1", "Enclosure1:Bay3:Q6.1", "Enclosure2:Bay6:Q5.1", "Enclosure2:Bay6:Q6.1" | Wait-HPOVTaskComplete
+    # Write-Output "Adding ImageStreamer Uplink Sets" | Timestamp
+    # $ImageStreamerDeploymentNetworkObject = Get-HPOVNetwork -Name "Deployment" -ErrorAction Stop
+    # Get-HPOVLogicalInterconnectGroup -Name "LIG-FlexFabric" -ErrorAction Stop | New-HPOVUplinkSet -Name "US-Image Streamer" -Type ImageStreamer -Networks $ImageStreamerDeploymentNetworkObject -UplinkPorts "Enclosure1:Bay3:Q5.1", "Enclosure1:Bay3:Q6.1", "Enclosure2:Bay6:Q5.1", "Enclosure2:Bay6:Q6.1" | Wait-HPOVTaskComplete
 
     Write-Output "All Uplink Sets Configured" | Timestamp
 }
@@ -209,7 +209,7 @@ function Create_Enclosure_Group {
     $3FrameVCLIG = Get-HPOVLogicalInterconnectGroup -Name LIG-FlexFabric
     $SasLIG = Get-HPOVLogicalInterconnectGroup -Name LIG-SAS
     $FcLIG = Get-HPOVLogicalInterconnectGroup -Name LIG-FC
-    New-HPOVEnclosureGroup -name "EG-Synergy-Local" -LogicalInterconnectGroupMapping @{Frame1 = $3FrameVCLIG, $SasLIG, $FcLIG; Frame2 = $3FrameVCLIG, $SasLIG, $FcLIG; Frame3 = $3FrameVCLIG, $SasLIG, $FcLIG } -EnclosureCount 3 -IPv4AddressType External -DeploymentNetworkType Internal
+    New-HPOVEnclosureGroup -name "EG-Synergy-Local" -LogicalInterconnectGroupMapping @{Frame1 = $3FrameVCLIG, $SasLIG, $FcLIG; Frame2 = $3FrameVCLIG, $SasLIG, $FcLIG; Frame3 = $3FrameVCLIG, $SasLIG, $FcLIG } -EnclosureCount 3 -IPv4AddressType External # -DeploymentNetworkType Internal
 
     Write-Output "Enclosure Group Created" | Timestamp
 }
@@ -679,7 +679,7 @@ Configure_SAN_Managers
 Configure_Networks
 Add_Storage
 Add_Users
-Create_OS_Deployment_Server
+# Create_OS_Deployment_Server
 Create_Logical_Interconnect_Groups
 Create_Uplink_Sets
 Create_Enclosure_Group
