@@ -3,12 +3,12 @@
 #
 # - Example script for configuring the HPE Synergy Appliance
 #
-#   VERSION 5.0
+#   VERSION 5.2
 #
 #   AUTHORS
 #   Dave Olker - HPE Storage and Big Data
 #
-# (C) Copyright 2019 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2020 Hewlett Packard Enterprise Development LP
 ##############################################################################
 <#
 Permission is hereby granted, free of charge, to any person obtaining a copy
