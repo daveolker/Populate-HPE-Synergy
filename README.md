@@ -12,21 +12,23 @@ The Populate HPE Synergy scripts work with the Data Center Simulator to instanti
 # How to use the scripts
 This package contains two primary scripts and one configuration file. These are PowerShell scripts and they require the HPE OneView PowerShell library found here: https://github.com/HewlettPackard/POSH-HPOneView. It is strongly recommended to use the latest version of the PowerShell library to take advantage of the latest features, new OneView/Synergy capabilities, and defect fixes.
 
+The script requires PowerShell Core version 6 or later. It will *NOT* work with Windows PowerShell 5.1, because it uses the PowerShell function Invoke-WebRequest with the option -SkipCertificateCheck and that option was only added in PowerShell 6.0. This option is used because DCS appliances typically use self-signed certificates and without the option the certificate check would fail and throw an error.
+
 ## Populate_HPE_Synergy.ps1
-This script connects with the Synergy DCS appliance and discovers/configures all the simulated hardware.  When the script is run, it prompts for the hostname or IP address of the Synergy appliance, the Administrator user name (usually Administrator), and the Administrator password.
+This script connects with the Synergy DCS appliance and discovers/configures all the simulated hardware.  When the script is run, it prompts for the hostname or IP address of the Synergy appliance, the Administrator user name (usually Administrator), and the Administrator password. Then it first detects the DCS schematic running on the appliance. It supports 2 schematics: synergy_3encl_demo and synergy_2encl_c2nitro. Any other schematic is unsupported and will make the script fail.
 
 This script does the following:
 
 * Prompts the user for the location of a Service Pack for ProLiant to upload as a Firmware Bundle
-* Prompts the user for a text file containing OneView and Synergy 8GB Fibre Channel Licenses
-* Configures two additional Synergy Enclosures
-* Renames all five Synergy Enclosures
+* Prompts the user for a text file containing Synergy Fibre Channel Licenses
+* Configures two additional remote Synergy Enclosures (for the synergy_3encl_demo schematic only)
+* Renames all Synergy Enclosures
 * Powers off all Compute Modules
 * Configures the simulated Cisco SAN Managers
 * Configures multiple Ethernet, Fibre Channel, and FCoE Networks
 * Configures multiple 3PAR Storage Arrays, Volume Templates, and Volumes
 * Adds various Users with different permissions
-* Deploys an HPE Image Streamer OS Deployment instance
+* Deploys an HPE Image Streamer OS Deployment instance (for the synergy_3encl_demo schematic only)
 * Creates Logical Interconnect Groups
 * Creates multiple Uplink Sets
 * Creates an Enclosure Group
@@ -34,7 +36,7 @@ This script does the following:
 * Creates multiple sample Server Profile Templates
 * Creates multiple sample Server Profiles
 * Adds various Scopes
-* Configures remote resources including: LE, LI, LIGs, Enclosure Group
+* Configures remote resources including: LE, LI, LIGs, Enclosure Group (for the synergy_3encl_demo schematic only)
 
 ## Cleanup_HPE_Synergy.ps1
 This script connects with the Synergy DCS appliance and de-configures all the simulated hardware.  It effectively backs-out all the changes made to the DCS appliance by the Populate_HPE_Synergy script. When the script is run, it prompts for the hostname or IP address of the Synergy appliance, the Administrator user name (usually Administrator), and the Administrator password.
