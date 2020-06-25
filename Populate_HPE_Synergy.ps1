@@ -38,6 +38,12 @@ Param ( [String]$OVApplianceIP                  = "192.168.62.128",
         [String]$OneViewModule                  = "HPOneView.520"
 )
 
+
+function Get-TimeStamp {    
+    return "[{0:MM/dd/yy} {0:HH:mm:ss}]" -f (Get-Date)
+}
+
+
 function GetSchematic($ApplianceIP)
 {
     if ($PSVersionTable.PSVersion.Major -lt 6) {
@@ -64,9 +70,9 @@ function GetSchematic($ApplianceIP)
 
 function Add_Remote_Enclosures
 {
-    Write-Output "Adding Remote Enclosures" | Timestamp
+    Write-Host "$(Get-TimeStamp) Adding Remote Enclosures"
     Send-HPOVRequest -uri "/rest/enclosures" -method POST -body @{'hostname' = 'fe80::2:0:9:7%eth2'} | Wait-HPOVTaskComplete
-    Write-Output "Remote Enclosures Added" | Timestamp
+    Write-Host "$(Get-TimeStamp) Remote Enclosures Added"
     #
     # Sleep for 10 seconds to allow remote enclosures to quiesce
     #
@@ -76,39 +82,39 @@ function Add_Remote_Enclosures
 
 function Configure_Address_Pools
 {
-    Write-Output "Configuring Address Pools for MAC, WWN, and Serial Numbers" | Timestamp
+    Write-Host "$(Get-TimeStamp) Configuring Address Pools for MAC, WWN, and Serial Numbers"
     New-HPOVAddressPoolRange -PoolType vmac -RangeType Generated
     New-HPOVAddressPoolRange -PoolType vwwn -RangeType Generated
     New-HPOVAddressPoolRange -PoolType vsn -RangeType Generated
-    Write-Output "Address Pool Ranges Configuration Complete" | Timestamp
+    Write-Host "$(Get-TimeStamp) Address Pool Ranges Configuration Complete"
 }
 
 
 function Configure_SAN_Managers
 {
-    Write-Output "Configuring SAN Managers" | Timestamp
+    Write-Host "$(Get-TimeStamp) Configuring SAN Managers"
     Add-HPOVSanManager -Hostname 172.18.20.1 -SnmpUserName dcs-SHA-AES128 -SnmpAuthLevel AuthAndPriv -SnmpAuthPassword dcsdcsdcs -SnmpAuthProtocol sha -SnmpPrivPassword dcsdcsdcs -SnmpPrivProtocol aes-128 -Type Cisco -Port 161 | Wait-HPOVTaskComplete
     Add-HPOVSanManager -Hostname 172.18.20.2 -SnmpUserName dcs-SHA-AES128 -SnmpAuthLevel AuthAndPriv -SnmpAuthPassword dcsdcsdcs -SnmpAuthProtocol sha -SnmpPrivPassword dcsdcsdcs -SnmpPrivProtocol aes-128 -Type Cisco -Port 161 | Wait-HPOVTaskComplete
     $password = ConvertTo-SecureString 'dcs' -AsPlainText -Force
     $credential = New-Object System.Management.Automation.PSCredential('dcs',$password)
     Add-HPOVSanManager -Hostname 172.18.19.1 -Type BrocadeFOS -Credential $credential -UseSsl | Wait-HPOVTaskComplete
     Add-HPOVSanManager -Hostname 172.18.19.2 -Type BrocadeFOS -Credential $credential -UseSsl | Wait-HPOVTaskComplete
-    Write-Output "SAN Manager Configuration Complete" | Timestamp
+    Write-Host "$(Get-TimeStamp) SAN Manager Configuration Complete"
 }
 
 
 function Configure_Networks($schematic)
 {
     if ($schematic -eq "Potash") {
-        Write-Output "Adding IPv4 Subnets" | Timestamp
+        Write-Host "$(Get-TimeStamp) Adding IPv4 Subnets"
         New-HPOVAddressPoolSubnet -Domain "mgmt.lan" -Gateway $prod_gateway -NetworkId $prod_subnet -SubnetMask $prod_mask
         New-HPOVAddressPoolSubnet -Domain "deployment.lan" -Gateway $deploy_gateway -NetworkId $deploy_subnet -SubnetMask $deploy_mask
     
-        Write-Output "Adding IPv4 Address Pool Ranges" | Timestamp
+        Write-Host "$(Get-TimeStamp) Adding IPv4 Address Pool Ranges"
         Get-HPOVAddressPoolSubnet -NetworkId $prod_subnet | New-HPOVAddressPoolRange -Name Mgmt -Start $prod_pool_start -End $prod_pool_end
         Get-HPOVAddressPoolSubnet -NetworkId $deploy_subnet | New-HPOVAddressPoolRange -Name Deployment -Start $deploy_pool_start -End $deploy_pool_end
     }
-    Write-Output "Adding Networks" | Timestamp
+    Write-Host "$(Get-TimeStamp) Adding Networks"
     New-HPOVNetwork -Name "ESX Mgmt" -MaximumBandwidth 20000 -Purpose Management -Type Ethernet -TypicalBandwidth 2500 -VlanId 1131 -VLANType Tagged
     New-HPOVNetwork -Name "ESX vMotion" -MaximumBandwidth 20000 -Purpose VMMigration -Type Ethernet -TypicalBandwidth 2500 -VlanId 1132 -VLANType Tagged
     New-HPOVNetwork -Name Prod_1101 -MaximumBandwidth 20000 -Purpose General -Type Ethernet -TypicalBandwidth 2500 -VlanId 1101 -VLANType Tagged
@@ -138,37 +144,37 @@ function Configure_Networks($schematic)
     New-HPOVNetwork -Name "SAN A FCoE" -VlanId 10 -ManagedSan VSAN10 -MaximumBandwidth 20000 -Type FCoE -TypicalBandwidth 8000
     New-HPOVNetwork -Name "SAN B FCoE" -VlanId 11 -ManagedSan VSAN11 -MaximumBandwidth 20000 -Type FCoE -TypicalBandwidth 8000
 
-    Write-Output "Adding Network Sets" | Timestamp
+    Write-Host "$(Get-TimeStamp) Adding Network Sets"
     New-HPOVNetworkSet -Name Prod -Networks Prod_1101, Prod_1102, Prod_1103, Prod_1104 -MaximumBandwidth 20000 -TypicalBandwidth 2500
 
-    Write-Output "Networking Configuration Complete" | Timestamp
+    Write-Host "$(Get-TimeStamp) Networking Configuration Complete"
 }
 
 
 function Add_Storage($schematic)
 {
-    Write-Output "Adding 3PAR Storage Systems" | Timestamp
+    Write-Host "$(Get-TimeStamp) Adding 3PAR Storage Systems"
     Add-HPOVStorageSystem -Hostname 172.18.11.11 -Password dcs -Username dcs -Domain TestDomain | Wait-HPOVTaskComplete
     Add-HPOVStorageSystem -Hostname 172.18.11.12 -Password dcs -Username dcs -Domain TestDomain | Wait-HPOVTaskComplete
 
-    Write-Output "Adding 3PAR Storage Pools" | Timestamp
+    Write-Host "$(Get-TimeStamp) Adding 3PAR Storage Pools"
     $SPNames = @("CPG-SSD", "CPG-SSD-AO", "CPG_FC-AO", "FST_CPG1", "FST_CPG2")
     for ($i=0; $i -lt $SPNames.Length; $i++) {
         Get-HPOVStoragePool -Name $SPNames[$i] -ErrorAction Stop | Set-HPOVStoragePool -Managed $true | Wait-HPOVTaskComplete
     }
     
-    Write-Output "Adding 3PAR Storage Volume Templates" | Timestamp
+    Write-Host "$(Get-TimeStamp) Adding 3PAR Storage Volume Templates"
     Get-HPOVStoragePool CPG-SSD -StorageSystem ThreePAR-1 | New-HPOVStorageVolumeTemplate -Capacity 100 -Name SVT-3PAR-Shared-1 -ProvisionType Thin -Shared
     Get-HPOVStoragePool CPG-SSD -StorageSystem ThreePAR-2 | New-HPOVStorageVolumeTemplate -Capacity 100 -Name SVT-3PAR-Shared-2 -ProvisionType Thin -Shared
-    Get-HPOVStoragePool CPG-SSD -StorageSystem ThreePAR-1 | New-HPOVStorageVolumeTemplate -Capacity 100 -Name SVT-Demo-Shared-TPDD-1 -ProvisionType Thin -EnableDeduplication $true -EnableCompression $true -Shared
-    Get-HPOVStoragePool CPG-SSD -StorageSystem ThreePAR-2 | New-HPOVStorageVolumeTemplate -Capacity 100 -Name SVT-Demo-Shared-TPDD-2 -ProvisionType Thin -EnableDeduplication $true -EnableCompression $true -Shared
+    Get-HPOVStoragePool CPG-SSD -StorageSystem ThreePAR-1 | New-HPOVStorageVolumeTemplate -Capacity 100 -Name SVT-Demo-Shared-TPDD-1 -ProvisionType Thin -EnableDeduplication $true -Shared
+    Get-HPOVStoragePool CPG-SSD -StorageSystem ThreePAR-2 | New-HPOVStorageVolumeTemplate -Capacity 100 -Name SVT-Demo-Shared-TPDD-2 -ProvisionType Thin -EnableDeduplication $true -Shared
 
-    Write-Output "Adding 3PAR Storage Volumes" | Timestamp
+    Write-Host "$(Get-TimeStamp) Adding 3PAR Storage Volumes"
     Get-HPOVStoragePool FST_CPG1 -StorageSystem ThreePAR-1 | New-HPOVStorageVolume -Capacity 200 -Name Demo-Volume-1 | Wait-HPOVTaskComplete
     Get-HPOVStoragePool FST_CPG1 -StorageSystem ThreePAR-1 | New-HPOVStorageVolume -Capacity 200 -Name Shared-Volume-1 -Shared | Wait-HPOVTaskComplete
     Get-HPOVStoragePool FST_CPG1 -StorageSystem ThreePAR-1 | New-HPOVStorageVolume -Capacity 200 -Name Shared-Volume-2 -Shared | Wait-HPOVTaskComplete
 
-    Write-Output "Adding StoreVirtual Storage Systems" | Timestamp
+    Write-Host "$(Get-TimeStamp) Adding StoreVirtual Storage Systems"
     $SVNet1 = Get-HPOVNetwork -Name SVCluster-1 -ErrorAction Stop
     Add-HPOVStorageSystem -Hostname 172.18.30.1 -Family StoreVirtual -Password dcs -Username dcs -VIPS @{ "172.18.30.1" = $SVNet1 } | Wait-HPOVTaskComplete
     $SVNet2 = Get-HPOVNetwork -Name SVCluster-2 -ErrorAction Stop
@@ -178,53 +184,45 @@ function Add_Storage($schematic)
         Add-HPOVStorageSystem -Hostname 172.18.30.3 -Family StoreVirtual -Password dcs -Username dcs -VIPS @{ "172.18.30.3" = $SVNet3 } | Wait-HPOVTaskComplete
     }
 
-    Write-Output "Adding StoreVirtual Storage Volume Templates" | Timestamp
+    Write-Host "$(Get-TimeStamp) Adding StoreVirtual Storage Volume Templates"
     Get-HPOVStoragePool Cluster-1 -StorageSystem Cluster-1 | New-HPOVStorageVolumeTemplate -Capacity 100 -Name SVT-StoreVirt-1 -ProvisionType Thin -Shared
     Get-HPOVStoragePool Cluster-2 -StorageSystem Cluster-2 | New-HPOVStorageVolumeTemplate -Capacity 100 -Name SVT-StoreVirt-2 -ProvisionType Thin -Shared
     if ($schematic -eq 'Potash') {
         Get-HPOVStoragePool Cluster-3 -StorageSystem Cluster-3 | New-HPOVStorageVolumeTemplate -Capacity 100 -Name SVT-StoreVirt-3 -ProvisionType Thin -Shared
     }
-
-    Write-Output "Storage Configuration Complete" | Timestamp
+    Write-Host "$(Get-TimeStamp) Storage Configuration Complete"
 }
 
 
 function Rename_Enclosures
 {
-    Write-Output "Renaming Enclosures" | Timestamp
+    Write-Host "$(Get-TimeStamp) Renaming Enclosures"
     $Enc = Get-HPOVEnclosure -Name 0000A66101 -ErrorAction SilentlyContinue
     Set-HPOVEnclosure -Name Synergy-Encl-1 -Enclosure $Enc | Wait-HPOVTaskComplete
-
     $Enc = Get-HPOVEnclosure -Name 0000A66102 -ErrorAction SilentlyContinue
     Set-HPOVEnclosure -Name Synergy-Encl-2 -Enclosure $Enc | Wait-HPOVTaskComplete
-
     $Enc = Get-HPOVEnclosure -Name 0000A66103 -ErrorAction SilentlyContinue
     Set-HPOVEnclosure -Name Synergy-Encl-3 -Enclosure $Enc | Wait-HPOVTaskComplete
-
     $Enc = Get-HPOVEnclosure -Name 0000A66104 -ErrorAction SilentlyContinue
     Set-HPOVEnclosure -Name Synergy-Encl-4 -Enclosure $Enc | Wait-HPOVTaskComplete
-
     $Enc = Get-HPOVEnclosure -Name 0000A66105 -ErrorAction SilentlyContinue
     Set-HPOVEnclosure -Name Synergy-Encl-5 -Enclosure $Enc | Wait-HPOVTaskComplete
-
-    Write-Output "All Enclosures Renamed" | Timestamp
+    Write-Host "$(Get-TimeStamp) All Enclosures Renamed"
 }
 
 function Rename_Enclosures_Nitro
 {
-    Write-Output "Renaming Enclosures" | Timestamp
+    Write-Host "$(Get-TimeStamp) Renaming Enclosures"
     $Enc = Get-HPOVEnclosure -Name 0000A66101 -ErrorAction SilentlyContinue
     Set-HPOVEnclosure -Name Synergy-Encl-1 -Enclosure $Enc | Wait-HPOVTaskComplete
-
     $Enc = Get-HPOVEnclosure -Name 0000A66102 -ErrorAction SilentlyContinue
     Set-HPOVEnclosure -Name Synergy-Encl-2 -Enclosure $Enc | Wait-HPOVTaskComplete
-
-    Write-Output "All Enclosures Renamed" | Timestamp
+    Write-Host "$(Get-TimeStamp) All Enclosures Renamed"
 }
 
 function Create_Uplink_Sets($schematic)
 {
-    Write-Output "Adding Fibre Channel and FCoE Uplink Sets" | Timestamp
+    Write-Host "$(Get-TimeStamp) Adding Fibre Channel and FCoE Uplink Sets"
     $LIGFlex = Get-HPOVLogicalInterconnectGroup -Name "LIG-VCEth"
     $SAN_A_FC = Get-HPOVNetwork -Name "SAN A FC"
     if ($schematic -eq "Potash") {
@@ -248,7 +246,7 @@ function Create_Uplink_Sets($schematic)
     $SAN_B_FCoE = Get-HPOVNetwork -Name "SAN B FCoE"
     New-HPOVUplinkSet -Resource $LIGFlex -Name "US-SAN-B-FCoE" -Type Ethernet -Networks $SAN_B_FCoE -UplinkPorts "Enclosure2:Bay6:Q1.1" -LacpTimer Short | Wait-HPOVTaskComplete
 
-    Write-Output "Adding Ethernet Uplink Sets" | Timestamp
+    Write-Host "$(Get-TimeStamp) Adding Ethernet Uplink Sets"
     $LIGFlex = Get-HPOVLogicalInterconnectGroup -Name "LIG-VCEth"
     $ESX_Mgmt = Get-HPOVNetwork -Name "ESX Mgmt"
     New-HPOVUplinkSet -Resource $LIGFlex -Name "US-ESX-Mgmt" -Type Ethernet -Networks $ESX_Mgmt -UplinkPorts "Enclosure1:Bay3:Q1.2","Enclosure2:Bay6:Q1.2" | Wait-HPOVTaskComplete
@@ -262,17 +260,17 @@ function Create_Uplink_Sets($schematic)
     New-HPOVUplinkSet -Resource $LIGFlex -Name "US-Prod" -Type Ethernet -Networks $Prod_Nets -UplinkPorts "Enclosure1:Bay3:Q1.4","Enclosure2:Bay6:Q1.4" | Wait-HPOVTaskComplete
 
     if ($schematic -eq "Potash") {
-        Write-Output "Adding ImageStreamer Uplink Sets" | Timestamp
+        Write-Host "$(Get-TimeStamp) Adding ImageStreamer Uplink Sets"
         $ImageStreamerDeploymentNetworkObject = Get-HPOVNetwork -Name "Deployment" -ErrorAction Stop
         Get-HPOVLogicalInterconnectGroup -Name "LIG-VCEth" -ErrorAction Stop | New-HPOVUplinkSet -Name "US-Image Streamer" -Type ImageStreamer -Networks $ImageStreamerDeploymentNetworkObject -UplinkPorts "Enclosure1:Bay3:Q5.1","Enclosure1:Bay3:Q6.1","Enclosure2:Bay6:Q5.1","Enclosure2:Bay6:Q6.1" | Wait-HPOVTaskComplete
     }
-
-    Write-Output "All Uplink Sets Configured" | Timestamp
+    Write-Host "$(Get-TimeStamp) All Uplink Sets Configured"
 }
 
 
 function Create_Enclosure_Group($schematic)
 {
+    Write-Host "$(Get-TimeStamp) Creating Local Enclosure Group"
     if ($schematic -eq "Potash") {
         $3FrameVCLIG = Get-HPOVLogicalInterconnectGroup -Name LIG-VCEth
         $SasLIG = Get-HPOVLogicalInterconnectGroup -Name LIG-SAS
@@ -285,46 +283,45 @@ function Create_Enclosure_Group($schematic)
         $FC32LIG = Get-HPOVLogicalInterconnectGroup -Name LIG-FC32
         $FC32LIG_Single = Get-HPOVLogicalInterconnectGroup -Name LIG-FC32-Single
         New-HPOVEnclosureGroup -name "EG-Synergy-Local" -LogicalInterconnectGroupMapping @{Frame1 = $2FrameVCLIG,$FC16LIG,$FC32LIG; Frame2 = $2FrameVCLIG,$FC32LIG_Single,$SasLIG} -EnclosureCount 2 -IPv4AddressType External
-
     }
-    Write-Output "Enclosure Group Created" | Timestamp
+    Write-Host "$(Get-TimeStamp) Enclosure Group Created"
 }
 
 
 function Create_Enclosure_Group_Remote
 {
+    Write-Host "$(Get-TimeStamp) Creating Remote Enclosure Group"
     $2FrameVCLIG_1 = Get-HPOVLogicalInterconnectGroup -Name LIG-VCEth-Remote-1
     $2FrameVCLIG_2 = Get-HPOVLogicalInterconnectGroup -Name LIG-VCEth-Remote-2
     $FcLIG = Get-HPOVLogicalInterconnectGroup -Name LIG-FC-Remote
     New-HPOVEnclosureGroup -name "EG-Synergy-Remote" -LogicalInterconnectGroupMapping @{Frame1 = $FcLIG,$2FrameVCLIG_1,$2FrameVCLIG_2; Frame2 = $FcLIG,$2FrameVCLIG_1,$2FrameVCLIG_2} -EnclosureCount 2
-
-    Write-Output "Enclosure Group Created" | Timestamp
+    Write-Host "$(Get-TimeStamp) Remote Enclosure Group Created"
 }
 
 
 function Create_Logical_Enclosure
 {
-    Write-Output "Creating Local Logical Enclosure" | Timestamp
+    Write-Host "$(Get-TimeStamp) Creating Local Logical Enclosure"
     $EG = Get-HPOVEnclosureGroup -Name EG-Synergy-Local
     $Encl = Get-HPOVEnclosure -Name Synergy-Encl-1
     New-HPOVLogicalEnclosure -EnclosureGroup $EG -Name LE-Synergy-Local -Enclosure $Encl | Wait-HPOVTaskComplete
-    Write-Output "Logical Enclosure Created" | Timestamp
+    Write-Host "$(Get-TimeStamp) Logical Enclosure Created"
 }
 
 
 function Create_Logical_Enclosure_Remote
 {
-    Write-Output "Creating Remote Logical Enclosure" | Timestamp
+    Write-Host "$(Get-TimeStamp) Creating Remote Logical Enclosure"
     $EG = Get-HPOVEnclosureGroup -Name EG-Synergy-Remote
     $Encl = Get-HPOVEnclosure -Name Synergy-Encl-4
     New-HPOVLogicalEnclosure -EnclosureGroup $EG -Name LE-Synergy-Remote -Enclosure $Encl | Wait-HPOVTaskComplete
-    Write-Output "Logical Enclosure Created" | Timestamp
+    Write-Host "$(Get-TimeStamp) Logical Enclosure Created"
 }
 
 
 function Create_Logical_Interconnect_Groups($schematic)
 {
-    Write-Output "Creating Local Logical Interconnect Groups" | Timestamp
+    Write-Host "$(Get-TimeStamp) Creating Local Logical Interconnect Groups"
     if ($schematic -eq "Potash") {
         New-HPOVLogicalInterconnectGroup -Name "LIG-SAS" -FrameCount 1 -InterconnectBaySet 1 -FabricModuleType "SAS" -Bays @{Frame1 = @{Bay1 = "SE12SAS" ; Bay4 = "SE12SAS"}}
         New-HPOVLogicalInterconnectGroup -Name "LIG-FC" -FrameCount 1 -InterconnectBaySet 2 -FabricModuleType "SEVCFC" -Bays @{Frame1 = @{Bay2 = "SEVC16GbFC" ; Bay5 = "SEVC16GbFC"}}
@@ -336,62 +333,59 @@ function Create_Logical_Interconnect_Groups($schematic)
         New-HPOVLogicalInterconnectGroup -Name "LIG-FC32-Single" -FrameCount 1 -InterconnectBaySet 2 -FabricModuleType "SEVCFC" -Bays @{Frame1 = @{Bay2 = "SEVC32GbFC" }} -FabricRedundancy ASide
         New-HPOVLogicalInterconnectGroup -Name "LIG-VCEth" -FrameCount 2 -InterconnectBaySet 3 -FabricModuleType "SEVC100F32" -DownlinkSpeedMode 50 -Bays @{Frame1 = @{Bay3 = "SEVC100f32" ; Bay6 = "SE50ILM"};Frame2 = @{Bay3 = "SE50ILM"; Bay6 = "SEVC100f32" }} -FabricRedundancy "HighlyAvailable"
     }
-    Write-Output "Logical Interconnect Groups Created" | Timestamp
+    Write-Host "$(Get-TimeStamp) Logical Interconnect Groups Created"
 }
 
 
 function Create_Logical_Interconnect_Groups_Remote
 {
-    Write-Output "Creating Remote Logical Interconnect Groups" | Timestamp
+    Write-Host "$(Get-TimeStamp) Creating Remote Logical Interconnect Groups"
     New-HPOVLogicalInterconnectGroup -Name "LIG-FC-Remote" -FrameCount 1 -InterconnectBaySet 1 -FabricModuleType "SEVCFC" -Bays @{Frame1 = @{Bay1 = "SEVC16GbFC" ; Bay4 = "SEVC16GbFC"}}
     New-HPOVLogicalInterconnectGroup -Name "LIG-VCEth-Remote-1" -FrameCount 2 -InterconnectBaySet 2 -FabricModuleType "SEVC40F8" -Bays @{Frame1 = @{Bay2 = "SEVC40f8" ; Bay5 = "SE20ILM"};Frame2 = @{Bay2 = "SE20ILM"; Bay5 = "SEVC40F8" }} -FabricRedundancy "HighlyAvailable"
     New-HPOVLogicalInterconnectGroup -Name "LIG-VCEth-Remote-2" -FrameCount 2 -InterconnectBaySet 3 -FabricModuleType "SEVC40F8" -Bays @{Frame1 = @{Bay3 = "SEVC40f8" ; Bay6 = "SE20ILM"};Frame2 = @{Bay3 = "SE20ILM"; Bay6 = "SEVC40F8" }} -FabricRedundancy "HighlyAvailable"
-    Write-Output "Logical Interconnect Groups Created" | Timestamp
+    Write-Host "$(Get-TimeStamp) Logical Interconnect Groups Created"
 }
 
 
 function Add_Licenses
 {
-    Write-Output "Adding OneView and Synergy FC Licenses" | Timestamp
-
+    Write-Host "$(Get-TimeStamp) Adding OneView and Synergy FC Licenses"
     $License_File = Read-Host -Prompt "Optional: Enter Filename Containing OneView and Synergy FC Licenses"
     if ($License_File) {
         New-HPOVLicense -File $License_File
     }
-
-    Write-Output "All Licenses Added" | Timestamp
+    Write-Host "$(Get-TimeStamp) All Licenses Added"
 }
 
 
 function Add_Firmware_Bundle
 {
-    Write-Output "Adding Firmware Bundles" | Timestamp
+    Write-Host "$(Get-TimeStamp) Adding Firmware Bundles"
     $firmware_bundle = Read-Host "Optional: Specify location of Service Pack for ProLiant ISO file"
     if ($firmware_bundle) {
         if (Test-Path $firmware_bundle) {
             Add-HPOVBaseline -File $firmware_bundle | Wait-HPOVTaskComplete
         }
         else {
-            Write-Output "Service Pack for ProLiant file '$firmware_bundle' not found.  Skipping firmware upload."
+            Write-Host "$(Get-TimeStamp) Service Pack for ProLiant file '$firmware_bundle' not found.  Skipping firmware upload."
         }
     }
-
-    Write-Output "Firmware Bundle Added" | Timestamp
+    Write-Host "$(Get-TimeStamp) Firmware Bundle Added"
 }
 
 
 function Create_OS_Deployment_Server
 {
-    Write-Output "Configuring OS Deployment Servers" | Timestamp
+    Write-Host "$(Get-TimeStamp) Configuring OS Deployment Servers"
     $ManagementNetwork = Get-HPOVNetwork -Type Ethernet -Name "Mgmt"
     Get-HPOVImageStreamerAppliance | Select-Object -First 1 | New-HPOVOSDeploymentServer -Name "LE1 Image Streamer" -ManagementNetwork $ManagementNetwork -Description "Image Streamer for Logical Enclosure 1" | Wait-HPOVTaskComplete
-    Write-Output "OS Deployment Server Configured" | Timestamp
+    Write-Host "$(Get-TimeStamp) OS Deployment Server Configured"
 }
 
 
 function Create_Server_Profile_Template_SY480_Gen9_RHEL_Local_Boot
 {
-    Write-Output "Creating SY480 Gen9 with Local Boot for RHEL Server Profile Template" | Timestamp
+    Write-Host "$(Get-TimeStamp) Creating SY480 Gen9 with Local Boot for RHEL Server Profile Template"
 
     $SHT               = Get-HPOVServerHardwareTypes -Name "SY 480 Gen9 1" -ErrorAction Stop
     $EnclGroup         = Get-HPOVEnclosureGroup -Name "EG-Synergy-Local" -ErrorAction Stop
@@ -422,15 +416,14 @@ function Create_Server_Profile_Template_SY480_Gen9_RHEL_Local_Boot
         StorageController        = $StorageController;
         StorageVolume            = $LogicalDisk
     }
-
     New-HPOVServerProfileTemplate @params | Wait-HPOVTaskComplete
-    Write-Output "SY480 Gen9 with Local Boot for RHEL Server Profile Template Created" | Timestamp
+    Write-Host "$(Get-TimeStamp) SY480 Gen9 with Local Boot for RHEL Server Profile Template Created"
 }
 
 
 function Create_Server_Profile_SY480_Gen9_RHEL_Local_Boot
 {
-    Write-Output "Creating SY480 Gen9 Local Boot for RHEL Server Profile" | Timestamp
+    Write-Host "$(Get-TimeStamp) Creating SY480 Gen9 Local Boot for RHEL Server Profile"
 
     $SHT            = Get-HPOVServerHardwareTypes -Name "SY 480 Gen9 1" -ErrorAction Stop
     $Template       = Get-HPOVServerProfileTemplate -Name "HPE Synergy 480 Gen9 with Local Boot for RHEL Template" -ErrorAction Stop
@@ -443,15 +436,14 @@ function Create_Server_Profile_SY480_Gen9_RHEL_Local_Boot
         Server                = $Server;
         ServerProfileTemplate = $Template
     }
-
     New-HPOVServerProfile @params | Wait-HPOVTaskComplete
-    Write-Output "SY480 Gen9 Local Boot for RHEL Server Profile Created" | Timestamp
+    Write-Host "$(Get-TimeStamp) SY480 Gen9 Local Boot for RHEL Server Profile Created"
 }
 
 
 function Create_Server_Profile_Template_SY480_Gen10_RHEL_Local_Boot
 {
-    Write-Output "Creating SY480 Gen10 with Local Boot for RHEL Server Profile Template" | Timestamp
+    Write-Host "$(Get-TimeStamp) Creating SY480 Gen10 with Local Boot for RHEL Server Profile Template"
 
     $SHT               = Get-HPOVServerHardwareTypes -Name "SY 480 Gen10 2" -ErrorAction Stop
     $EnclGroup         = Get-HPOVEnclosureGroup -Name "EG-Synergy-Local" -ErrorAction Stop
@@ -480,15 +472,14 @@ function Create_Server_Profile_Template_SY480_Gen10_RHEL_Local_Boot
         StorageController        = $StorageController;
         StorageVolume            = $LogicalDisk
     }
-
     New-HPOVServerProfileTemplate @params | Wait-HPOVTaskComplete
-    Write-Output "SY480 Gen10 with Local Boot for RHEL Server Profile Template Created" | Timestamp
+    Write-Host "$(Get-TimeStamp) SY480 Gen10 with Local Boot for RHEL Server Profile Template Created"
 }
 
 
 function Create_Server_Profile_SY480_Gen10_RHEL_Local_Boot
 {
-    Write-Output "Creating SY480 Gen10 Local Boot for RHEL Server Profile" | Timestamp
+    Write-Host "$(Get-TimeStamp) Creating SY480 Gen10 Local Boot for RHEL Server Profile"
 
     $SHT            = Get-HPOVServerHardwareTypes -Name "SY 480 Gen10 2" -ErrorAction Stop
     $Template       = Get-HPOVServerProfileTemplate -Name "HPE Synergy 480 Gen10 with Local Boot for RHEL Template" -ErrorAction Stop
@@ -501,14 +492,13 @@ function Create_Server_Profile_SY480_Gen10_RHEL_Local_Boot
         Server                = $Server;
         ServerProfileTemplate = $Template
     }
-
     New-HPOVServerProfile @params | Wait-HPOVTaskComplete
-    Write-Output "SY480 Gen10 Local Boot for RHEL Server Profile Created" | Timestamp
+    Write-Host "$(Get-TimeStamp) SY480 Gen10 Local Boot for RHEL Server Profile Created"
 }
 
 function Create_Server_Profile_Template_SY660_Gen9_Windows_SAN_Storage
 {
-    Write-Output "Creating SY660 Gen9 with Local Boot and SAN Storage for Windows Server Profile Template" | Timestamp
+    Write-Host "$(Get-TimeStamp) Creating SY660 Gen9 with Local Boot and SAN Storage for Windows Server Profile Template"
 
     $SHT               = Get-HPOVServerHardwareTypes -Name "SY 660 Gen9 1" -ErrorAction Stop
     $EnclGroup         = Get-HPOVEnclosureGroup -Name "EG-Synergy-Local" -ErrorAction Stop
@@ -540,15 +530,14 @@ function Create_Server_Profile_Template_SY660_Gen9_Windows_SAN_Storage
         StorageController        = $StorageController;
         StorageVolume            = $SANVol
     }
-
     New-HPOVServerProfileTemplate @params | Wait-HPOVTaskComplete
-    Write-Output "SY660 Gen9 with Local Boot and SAN Storage for Windows Server Profile Template Created" | Timestamp
+    Write-Host "$(Get-TimeStamp) SY660 Gen9 with Local Boot and SAN Storage for Windows Server Profile Template Created"
 }
 
 
 function Create_Server_Profile_SY660_Gen9_Windows_SAN_Storage
 {
-    Write-Output "Creating SY660 Gen9 with Local Boot and SAN Storage for Windows Server Profile" | Timestamp
+    Write-Host "$(Get-TimeStamp) Creating SY660 Gen9 with Local Boot and SAN Storage for Windows Server Profile"
 
     $SHT            = Get-HPOVServerHardwareTypes -Name "SY 660 Gen9 1" -ErrorAction Stop
     $Template       = Get-HPOVServerProfileTemplate -Name "HPE Synergy 660 Gen9 with Local Boot and SAN Storage for Windows Template" -ErrorAction Stop
@@ -561,14 +550,13 @@ function Create_Server_Profile_SY660_Gen9_Windows_SAN_Storage
         Server                = $Server;
         ServerProfileTemplate = $Template
     }
-
     New-HPOVServerProfile @params | Wait-HPOVTaskComplete
-    Write-Output "SY660 Gen9 with Local Boot and SAN Storage for Windows Server Profile Created" | Timestamp
+    Write-Host "$(Get-TimeStamp) SY660 Gen9 with Local Boot and SAN Storage for Windows Server Profile Created"
 }
 
 function Create_Server_Profile_Template_SY660_Gen10_Windows_SAN_Storage
 {
-    Write-Output "Creating SY660 Gen10 with Local Boot and SAN Storage for Windows Server Profile Template" | Timestamp
+    Write-Host "$(Get-TimeStamp) Creating SY660 Gen10 with Local Boot and SAN Storage for Windows Server Profile Template"
 
     $SHT               = Get-HPOVServerHardwareTypes -Name "SY 660 Gen10 1" -ErrorAction Stop
     $EnclGroup         = Get-HPOVEnclosureGroup -Name "EG-Synergy-Local" -ErrorAction Stop
@@ -601,14 +589,13 @@ function Create_Server_Profile_Template_SY660_Gen10_Windows_SAN_Storage
         StorageController        = $StorageController;
         StorageVolume            = $SANVol
     }
-
     New-HPOVServerProfileTemplate @params | Wait-HPOVTaskComplete
-    Write-Output "SY660 Gen10 with Local Boot and SAN Storage for Windows Server Profile Template Created" | Timestamp
+    Write-Host "$(Get-TimeStamp) SY660 Gen10 with Local Boot and SAN Storage for Windows Server Profile Template Created"
 }
 
 function Create_Server_Profile_SY660_Gen10_Windows_SAN_Storage
 {
-    Write-Output "Creating SY660 Gen10 with Local Boot and SAN Storage for Windows Server Profile" | Timestamp
+    Write-Host "$(Get-TimeStamp) Creating SY660 Gen10 with Local Boot and SAN Storage for Windows Server Profile"
 
     $SHT            = Get-HPOVServerHardwareTypes -Name "SY 660 Gen10 1" -ErrorAction Stop
     $Template       = Get-HPOVServerProfileTemplate -Name "HPE Synergy 660 Gen10 with Local Boot and SAN Storage for Windows Template" -ErrorAction Stop
@@ -621,15 +608,14 @@ function Create_Server_Profile_SY660_Gen10_Windows_SAN_Storage
         Server                = $Server;
         ServerProfileTemplate = $Template
     }
-
     New-HPOVServerProfile @params | Wait-HPOVTaskComplete
-    Write-Output "SY660 Gen10 with Local Boot and SAN Storage for Windows Server Profile Created" | Timestamp
+    Write-Host "$(Get-TimeStamp) SY660 Gen10 with Local Boot and SAN Storage for Windows Server Profile Created"
 }
 
 
 function Create_Server_Profile_Template_SY480_Gen9_ESX_SAN_Boot
 {
-    Write-Output "Creating SY480 Gen9 with SAN Boot for ESX Server Profile Template" | Timestamp
+    Write-Host "$(Get-TimeStamp) Creating SY480 Gen9 with SAN Boot for ESX Server Profile Template"
 
     $SHT               = Get-HPOVServerHardwareTypes -Name "SY 480 Gen9 2" -ErrorAction Stop
     $EnclGroup         = Get-HPOVEnclosureGroup -Name "EG-Synergy-Local" -ErrorAction Stop
@@ -659,15 +645,14 @@ function Create_Server_Profile_Template_SY480_Gen9_ESX_SAN_Boot
         ServerProfileDescription = "Server Profile for HPE Synergy 480 Gen9 Compute Module with SAN Boot for ESX";
         StorageVolume            = $SANVol
     }
-
     New-HPOVServerProfileTemplate @params | Wait-HPOVTaskComplete
-    Write-Output "SY480 Gen9 with SAN Boot for ESX Server Profile Template Created" | Timestamp
+    Write-Host "$(Get-TimeStamp) SY480 Gen9 with SAN Boot for ESX Server Profile Template Created"
 }
 
 
 function Create_Server_Profile_SY480_Gen9_ESX_SAN_Boot
 {
-    Write-Output "Creating SY480 Gen9 SAN Boot for ESX Server Profile" | Timestamp
+    Write-Host "$(Get-TimeStamp) Creating SY480 Gen9 SAN Boot for ESX Server Profile"
 
     $SHT            = Get-HPOVServerHardwareTypes -Name "SY 480 Gen9 2" -ErrorAction Stop
     $Template       = Get-HPOVServerProfileTemplate -Name "HPE Synergy 480 Gen9 with SAN Boot for ESX Template" -ErrorAction Stop
@@ -680,15 +665,14 @@ function Create_Server_Profile_SY480_Gen9_ESX_SAN_Boot
         Server                = $Server;
         ServerProfileTemplate = $Template
     }
-
     New-HPOVServerProfile @params | Wait-HPOVTaskComplete
-    Write-Output "SY480 Gen9 with SAN Boot for ESX Server Profile Created" | Timestamp
+    Write-Host "$(Get-TimeStamp) SY480 Gen9 with SAN Boot for ESX Server Profile Created"
 }
 
 
 function Create_Server_Profile_Template_SY480_Gen10_ESX_SAN_Boot
 {
-    Write-Output "Creating SY480 Gen10 with SAN Boot for ESX Server Profile Template" | Timestamp
+    Write-Host "$(Get-TimeStamp) Creating SY480 Gen10 with SAN Boot for ESX Server Profile Template"
 
     $SHT               = Get-HPOVServerHardwareTypes -Name "SY 480 Gen10 1" -ErrorAction Stop
     $EnclGroup         = Get-HPOVEnclosureGroup -Name "EG-Synergy-Local" -ErrorAction Stop
@@ -746,15 +730,14 @@ function Create_Server_Profile_Template_SY480_Gen10_ESX_SAN_Boot
             StorageVolume            = $SANVol
         }
     }
-
     New-HPOVServerProfileTemplate @params | Wait-HPOVTaskComplete
-    Write-Output "SY480 Gen10 with SAN Boot for ESX Server Profile Template Created" | Timestamp
+    Write-Host "$(Get-TimeStamp) SY480 Gen10 with SAN Boot for ESX Server Profile Template Created"
 }
 
 
 function Create_Server_Profile_SY480_Gen10_ESX_SAN_Boot
 {
-    Write-Output "Creating SY480 Gen10 SAN Boot for ESX Server Profile" | Timestamp
+    Write-Host "$(Get-TimeStamp) Creating SY480 Gen10 SAN Boot for ESX Server Profile"
 
     $SHT            = Get-HPOVServerHardwareTypes -Name "SY 480 Gen10 1" -ErrorAction Stop
     $Template       = Get-HPOVServerProfileTemplate -Name "HPE Synergy 480 Gen10 with SAN Boot for ESX Template" -ErrorAction Stop
@@ -767,53 +750,45 @@ function Create_Server_Profile_SY480_Gen10_ESX_SAN_Boot
         Server                = $Server;
         ServerProfileTemplate = $Template
     }
-
     New-HPOVServerProfile @params | Wait-HPOVTaskComplete
-    Write-Output "SY480 Gen10 with SAN Boot for ESX Server Profile Created" | Timestamp
+    Write-Host "$(Get-TimeStamp) SY480 Gen10 with SAN Boot for ESX Server Profile Created"
 }
 
 
 function PowerOff_All_Servers
 {
-    Write-Output "Powering Off All Servers" | Timestamp
-
+    Write-Host "$(Get-TimeStamp) Powering Off All Servers"
     $Servers = Get-HPOVServer
-
     $Servers | ForEach-Object {
         if ($_.PowerState -ne "Off") {
-            Write-Host "Server $($_.Name) is $($_.PowerState).  Powering off..." | Timestamp
+            Write-Host "Server $($_.Name) is $($_.PowerState).  Powering off..."
             Stop-HPOVServer -Server $_ -Force -Confirm:$false | Wait-HPOVTaskComplete
         }
     }
-
-    Write-Output "All Servers Powered Off" | Timestamp
+    Write-Host "$(Get-TimeStamp) All Servers Powered Off"
 }
 
 
 function Add_Users
 {
-    Write-Output "Adding New Users" | Timestamp
-
+    Write-Host "$(Get-TimeStamp) Adding New Users"
     New-HPOVUser -UserName BackupAdmin -FullName "Backup Administrator" -Password BackupPasswd -Roles "Backup Administrator" -EmailAddress "backup@hpe.com" -OfficePhone "(111) 111-1111" -MobilePhone "(999) 999-9999"
     New-HPOVUser -UserName NetworkAdmin -FullName "Network Administrator" -Password NetworkPasswd -Roles "Network Administrator" -EmailAddress "network@hpe.com" -OfficePhone "(222) 222-2222" -MobilePhone "(888) 888-8888"
     New-HPOVUser -UserName ServerAdmin -FullName "Server Administrator" -Password ServerPasswd -Roles "Server Administrator" -EmailAddress "server@hpe.com" -OfficePhone "(333) 333-3333" -MobilePhone "(777) 777-7777"
     New-HPOVUser -UserName StorageAdmin -FullName "Storage Administrator" -Password StoragePasswd -Roles "Storage Administrator" -EmailAddress "storage@hpe.com" -OfficePhone "(444) 444-4444" -MobilePhone "(666) 666-6666"
     New-HPOVUser -UserName SoftwareAdmin -FullName "Software Administrator" -Password SoftwarePasswd -Roles "Software Administrator" -EmailAddress "software@hpe.com" -OfficePhone "(555) 555-5555" -MobilePhone "(123) 234-3456"
-
-    Write-Output "All New Users Added" | Timestamp
+    Write-Host "$(Get-TimeStamp) All New Users Added"
 }
 
 
 function Add_Scopes
 {
-    Write-Output "Adding New Scopes" | Timestamp
-
+    Write-Host "$(Get-TimeStamp) Adding New Scopes"
     New-HPOVScope -Name FinanceScope -Description "Finance Scope of Resources"
     $Resources += Get-HPOVNetwork -Name Prod*
     $Resources += Get-HPOVEnclosure -Name Synergy-Encl-1
     Get-HPOVScope -Name FinanceScope | Add-HPOVResourceToScope -InputObject $Resources
-
-    Write-Output "All New Scopes Added" | Timestamp
+    Write-Host "$(Get-TimeStamp) All New Scopes Added"
 }
 
 
@@ -857,7 +832,7 @@ if (-not $ConnectedSessions)
     $AdminCred       = Get-Credential -UserName $AdminName -Message "Password required for the user '$AdminName'"
     if ([string]::IsNullOrWhiteSpace($AdminCred))
     {
-        Write-Output "Blank Credential is not permitted.  Exiting."
+        Write-Host "$(Get-TimeStamp) Blank Credential is not permitted.  Exiting."
         Exit
     }
 
@@ -865,7 +840,7 @@ if (-not $ConnectedSessions)
 
     if (-not $ConnectedSessions)
     {
-        Write-Output "Login to Synergy System failed.  Exiting."
+        Write-Host "$(Get-TimeStamp) Login to Synergy System failed.  Exiting."
         Exit
     }
 }
@@ -878,8 +853,8 @@ catch {
     Exit
 }
 
-filter Timestamp {"$(Get-Date -Format G): $_"}
-Write-Output "Configuring HPE Synergy Appliance" | Timestamp
+
+Write-Host "$(Get-TimeStamp) Configuring HPE Synergy Appliance"
 
 if ($schematic -eq "Potash") {
     ##########################################################################
@@ -895,7 +870,7 @@ if ($schematic -eq "Potash") {
             New-Variable -Name $var[0] -Value $var[1] -Scope Global -Force
         }
     } else {
-        Write-Output "Configuration file '$config_file' not found.  Exiting." | Timestamp
+        Write-Host "$(Get-TimeStamp) Configuration file '$config_file' not found.  Exiting."
         Exit
     }
 }
@@ -948,6 +923,6 @@ if ($schematic -eq "Potash") {
     Create_Enclosure_Group_Remote
     Create_Logical_Enclosure_Remote
 }
-Write-Output "HPE Synergy Appliance Configuration Complete" | Timestamp
+Write-Host "$(Get-TimeStamp) HPE Synergy Appliance Configuration Complete"
 
 Disconnect-HPOVMgmt

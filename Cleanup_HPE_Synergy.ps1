@@ -38,61 +38,66 @@ Param ( [String]$OVApplianceIP                  = "192.168.62.128",
 )
 
 
+function Get-TimeStamp {    
+    return "[{0:MM/dd/yy} {0:HH:mm:ss}]" -f (Get-Date)
+}
+
+
 function Remove_Logical_Enclosures
 {
-    Write-Output "Removing all Logical Enclosures" | Timestamp
+    Write-Host "$(Get-TimeStamp) Removing all Logical Enclosures"
     Get-HPOVLogicalEnclosure | Remove-HPOVLogicalEnclosure -Force -Confirm:$false | Wait-HPOVTaskComplete
-    Write-Output "All Logical Enclosures Removed" | Timestamp
+    Write-Host "$(Get-TimeStamp) All Logical Enclosures Removed"
 }    
 
 
 function Remove_Enclosure_Groups
 {
-    Write-Output "Removing all Enclosure Groups" | Timestamp
+    Write-Host "$(Get-TimeStamp) Removing all Enclosure Groups"
     Get-HPOVEnclosureGroup | Remove-HPOVEnclosureGroup -Force -Confirm:$false
-    Write-Output "All Enclosure Groups Removed" | Timestamp
+    Write-Host "$(Get-TimeStamp) All Enclosure Groups Removed"
 }
     
 
 function Remove_Logical_Interconnect_Groups
 {
-    Write-Output "Removing all Logical Interconnect Groups" | Timestamp
+    Write-Host "$(Get-TimeStamp) Removing all Logical Interconnect Groups"
     Get-HPOVLogicalInterconnectGroup | Remove-HPOVLogicalInterconnectGroup -Force -Confirm:$false | Wait-HPOVTaskComplete
-    Write-Output "All Logical Interconnect Groups Removed" | Timestamp
+    Write-Host "$(Get-TimeStamp) All Logical Interconnect Groups Removed"
 }
 
 
 function Remove_OS_Deployment_Servers
 {
-    Write-Output "Removing all OS Deployment Servers" | Timestamp
+    Write-Host "$(Get-TimeStamp) Removing all OS Deployment Servers"
     Get-HPOVOSDeploymentServer | Remove-HPOVOSDeploymentServer -Confirm:$false | Wait-HPOVTaskComplete
     #
     # Sleep for 400 seconds to allow the OS Deployment Cluster to Form
     #
     #Sleep -Seconds 400
-    Write-Output "All OS Deployment Servers Removed" | Timestamp
+    Write-Host "$(Get-TimeStamp) All OS Deployment Servers Removed"
 }
 
 
 function Remove_Server_Profile_Templates
 {
-    Write-Output "Removing all Server Profile Templates" | Timestamp
+    Write-Host "$(Get-TimeStamp) Removing all Server Profile Templates"
     Get-HPOVServerProfileTemplate | Remove-HPOVServerProfileTemplate -Force -Confirm:$false | Wait-HPOVTaskComplete
-    Write-Output "All Server Profile Templates Removed" | Timestamp
+    Write-Host "$(Get-TimeStamp) All Server Profile Templates Removed"
 }
 
 
 function Remove_Server_Profiles
 {
-    Write-Output "Removing all Server Profiles" | Timestamp
+    Write-Host "$(Get-TimeStamp) Removing all Server Profiles"
     Get-HPOVServerProfile | Remove-HPOVserverProfile -Force -Confirm:$false | Wait-HPOVTaskComplete
-    Write-Output "All Server Profiles Removed" | Timestamp
+    Write-Host "$(Get-TimeStamp) All Server Profiles Removed"
 }
 
 
 function Rename_Enclosures
 {
-    Write-Output "Renaming Enclosures" | Timestamp
+    Write-Host "$(Get-TimeStamp) Renaming Enclosures"
     $Enc = Get-HPOVEnclosure -Name Synergy-Encl-1 -ErrorAction SilentlyContinue
     Set-HPOVEnclosure -Name "0000A66101" -Enclosure $Enc | Wait-HPOVTaskComplete
 
@@ -108,115 +113,115 @@ function Rename_Enclosures
     $Enc = Get-HPOVEnclosure -Name Synergy-Encl-5 -ErrorAction SilentlyContinue
     Set-HPOVEnclosure -Name "0000A66105" -Enclosure $Enc | Wait-HPOVTaskComplete
 
-    Write-Output "All Enclosures Renamed" | Timestamp
+    Write-Host "$(Get-TimeStamp) All Enclosures Renamed"
 }
 
 
 function Remove_Storage_Volume_Templates
 {
-    Write-Output "Removing all Storage Volume Templates" | Timestamp
+    Write-Host "$(Get-TimeStamp) Removing all Storage Volume Templates"
     Get-HPOVStorageVolumeTemplate | Remove-HPOVStorageVolumeTemplate -Force -Confirm:$false
-    Write-Output "All Storage Volume Templates Removed" | Timestamp
+    Write-Host "$(Get-TimeStamp) All Storage Volume Templates Removed"
 }
 
 
 function Remove_Storage_Volumes
 {
-    Write-Output "Removing all Storage Volumes" | Timestamp
+    Write-Host "$(Get-TimeStamp) Removing all Storage Volumes"
     Get-HPOVStorageVolume | Remove-HPOVStorageVolume -Confirm:$false | Wait-HPOVTaskComplete
-    Write-Output "All Storage Volumes Removed" | Timestamp
+    Write-Host "$(Get-TimeStamp) All Storage Volumes Removed"
 }
 
 
 function Remove_Storage_Pools
 {
-    Write-Output "Removing all Storage Pools" | Timestamp
+    Write-Host "$(Get-TimeStamp) Removing all Storage Pools"
     Get-HPOVStoragePool | Remove-HPOVStoragePool -Force -Confirm:$false | Wait-HPOVTaskComplete
-    Write-Output "All Storage Pools Removed" | Timestamp
+    Write-Host "$(Get-TimeStamp) All Storage Pools Removed"
 }
 
 
 function Remove_Storage_Systems
 {
-    Write-Output "Removing all Storage Systems" | Timestamp
+    Write-Host "$(Get-TimeStamp) Removing all Storage Systems"
     Get-HPOVStorageSystem | Remove-HPOVStorageSystem -Force -Confirm:$false | Wait-HPOVTaskComplete
-    Write-Output "All Storage Systems Removed" | Timestamp
+    Write-Host "$(Get-TimeStamp) All Storage Systems Removed"
 }
 
 
 function Remove_Network_Sets
 {
-    Write-Output "Removing all Network Sets" | Timestamp
+    Write-Host "$(Get-TimeStamp) Removing all Network Sets"
     Get-HPOVNetworkSet | Remove-HPOVNetworkSet -Confirm:$false | Wait-HPOVTaskComplete
-    Write-Output "All Network Sets Removed" | Timestamp
+    Write-Host "$(Get-TimeStamp) All Network Sets Removed"
 }
 
 
 function Remove_Networks
 {
-    Write-Output "Removing all Networks" | Timestamp
+    Write-Host "$(Get-TimeStamp) Removing all Networks"
     Get-HPOVNetwork | Remove-HPOVNetwork -Force -Confirm:$false | Wait-HPOVTaskComplete
-    Write-Output "All Networks Removed" | Timestamp
+    Write-Host "$(Get-TimeStamp) All Networks Removed"
 }
 
 
 function Remove_IPv4_Address_Pool_Ranges
 {
-    Write-Output "Removing all IPv4 Address Pool Ranges" | Timestamp
+    Write-Host "$(Get-TimeStamp) Removing all IPv4 Address Pool Ranges"
     Get-HPOVAddressPoolRange | Remove-HPOVAddressPoolRange -Confirm:$false
-    Write-Output "All IPv4 Address Pools Removed" | Timestamp
+    Write-Host "$(Get-TimeStamp) All IPv4 Address Pools Removed"
 }
 
 
 function Remove_IPv4_Subnets
 {
-    Write-Output "Removing all IPv4 Subnets" | Timestamp
+    Write-Host "$(Get-TimeStamp) Removing all IPv4 Subnets"
     Get-HPOVAddressPoolSubnet | Remove-HPOVAddressPoolSubnet -Confirm:$false
-    Write-Output "All IPv4 Subnets Removed" | Timestamp
+    Write-Host "$(Get-TimeStamp) All IPv4 Subnets Removed"
 }
 
 
 function Remove_SAN_Managers
 {
-    Write-Output "Removing all SAN Managers" | Timestamp
+    Write-Host "$(Get-TimeStamp) Removing all SAN Managers"
     Get-HPOVSanManager | Remove-HPOVSanManager -Confirm:$false | Wait-HPOVTaskComplete
-    Write-Output "All SAN Managers Removed" | Timestamp
+    Write-Host "$(Get-TimeStamp) All SAN Managers Removed"
 }
 
 
 function Remove_Licenses
 {
-    Write-Output "Removing all Licenses" | Timestamp
+    Write-Host "$(Get-TimeStamp) Removing all Licenses"
     Get-HPOVLicense | Remove-HPOVLicense -Confirm:$false
-    Write-Output "All Licenses Removed" | Timestamp
+    Write-Host "$(Get-TimeStamp) All Licenses Removed"
 }
 
 
 function Remove_Firmware_Bundles
 {
-    Write-Output "Removing all Fimrware Bundles" | Timestamp
+    Write-Host "$(Get-TimeStamp) Removing all Fimrware Bundles"
     Get-HPOVBaseline | Remove-HPOVBaseline -Confirm:$false | Wait-HPOVTaskComplete
-    Write-Output "All Firmware Bundles Removed" | Timestamp
+    Write-Host "$(Get-TimeStamp) All Firmware Bundles Removed"
 }
 
 
 function Remove_New_Users
 {
-    Write-Output "Removing all non-default Users" | Timestamp
+    Write-Host "$(Get-TimeStamp) Removing all non-default Users"
     Get-HPOVUser -Name BackupAdmin | Remove-HPOVUser -Confirm:$false
     Get-HPOVUser -Name NetworkAdmin | Remove-HPOVUser -Confirm:$false
     Get-HPOVUser -Name ServerAdmin | Remove-HPOVUser -Confirm:$false
     Get-HPOVUser -Name StorageAdmin | Remove-HPOVUser -Confirm:$false
     Get-HPOVUser -Name SoftwareAdmin | Remove-HPOVUser -Confirm:$false
-    Write-Output "All non-default Users Removed" | Timestamp
+    Write-Host "$(Get-TimeStamp) All non-default Users Removed"
 }
 
 
 function Remove_Scopes
 {
-    Write-Output "Removing all Scopes" | Timestamp
+    Write-Host "$(Get-TimeStamp) Removing all Scopes"
     Get-HPOVScope -Name FinanceScope | Remove-HPOVScope -Confirm:$false
-    Write-Output "All Scopes Removed" | Timestamp
+    Write-Host "$(Get-TimeStamp) All Scopes Removed"
 }
 
 
@@ -260,7 +265,7 @@ if (-not $ConnectedSessions)
     $AdminCred       = Get-Credential -UserName $AdminName -Message "Password required for the user '$AdminName'"
     if ([string]::IsNullOrWhiteSpace($AdminCred))
     {
-        Write-Output "Blank Credential is not permitted.  Exiting."
+        Write-Host "$(Get-TimeStamp) Blank Credential is not permitted.  Exiting."
         Exit
     }
 
@@ -268,14 +273,13 @@ if (-not $ConnectedSessions)
 
     if (-not $ConnectedSessions)
     {
-        Write-Output "Login to Synergy System failed.  Exiting."
+        Write-Host "$(Get-TimeStamp) Login to Synergy System failed.  Exiting."
         Exit
     }
 }
 
-filter Timestamp {"$(Get-Date -Format G): $_"}
 
-Write-Output "De-Configuring HPE Synergy Appliance" | Timestamp
+Write-Host "$(Get-TimeStamp) De-Configuring HPE Synergy Appliance"
 
 Remove_Server_Profiles
 Remove_Server_Profile_Templates
@@ -304,6 +308,6 @@ Remove_New_Users
 Remove_Scopes
 Remove_Firmware_Bundles
 
-Write-Output "HPE Synergy Appliance De-configuration Complete" | Timestamp
+Write-Host "$(Get-TimeStamp) HPE Synergy Appliance De-configuration Complete"
 
 Disconnect-HPOVMgmt
