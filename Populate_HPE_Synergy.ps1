@@ -3,10 +3,11 @@
 #
 # - Example script for configuring the HPE Synergy Appliance
 #
-#   VERSION 5.2
+#   VERSION 5.20
 #
 #   AUTHORS
 #   Dave Olker - HPE Storage and Big Data
+#   Vincent Berger - HPE Synergy and BladeSystem
 #
 # (C) Copyright 2020 Hewlett Packard Enterprise Development LP
 ##############################################################################
@@ -34,7 +35,7 @@ THE SOFTWARE.
 Param ( [String]$OVApplianceIP                  = "192.168.62.128",
         [String]$OVAdminName                    = "Administrator",
         [String]$OVAuthDomain                   = "Local",
-        [String]$OneViewModule                  = "HPOneView.500"
+        [String]$OneViewModule                  = "HPOneView.520"
 )
 
 function GetSchematic($ApplianceIP)
@@ -394,8 +395,8 @@ function Create_Server_Profile_Template_SY480_Gen9_RHEL_Local_Boot
 
     $SHT               = Get-HPOVServerHardwareTypes -Name "SY 480 Gen9 1" -ErrorAction Stop
     $EnclGroup         = Get-HPOVEnclosureGroup -Name "EG-Synergy-Local" -ErrorAction Stop
-    $Eth1              = Get-HPOVNetwork -Name "Prod_1101" | New-HPOVServerProfileConnection -ConnectionID 1 -Name 'Prod-1101' -PortId "Mezz 3:1-c"
-    $Eth2              = Get-HPOVNetwork -Name "Prod_1102" | New-HPOVServerProfileConnection -ConnectionID 2 -Name 'Prod-1102' -PortId "Mezz 3:2-c"
+    $Eth1              = Get-HPOVNetworkSet -Name "Prod" | New-HPOVServerProfileConnection -ConnectionID 1 -Name 'Prod-NetworkSet-1' -PortId "Mezz 3:1-c"
+    $Eth2              = Get-HPOVNetworkSet -Name "Prod" | New-HPOVServerProfileConnection -ConnectionID 2 -Name 'Prod-NetworkSet-2' -PortId "Mezz 3:2-c"
     $Deploy1           = Get-HPOVNetwork -Name "Deployment" | New-HPOVServerProfileConnection -ConnectionID 3 -Name 'Deployment Network A' -PortId "Mezz 3:1-a" -Bootable -Priority Primary
     $Deploy2           = Get-HPOVNetwork -Name "Deployment" | New-HPOVServerProfileConnection -ConnectionID 4 -Name 'Deployment Network B' -PortId "Mezz 3:2-a" -Bootable -Priority Secondary
     $LogicalDisk       = New-HPOVServerProfileLogicalDisk -Name "SAS RAID1 SSD" -RAID RAID1 -NumberofDrives 2 -DriveType SASSSD -Bootable $True
@@ -454,8 +455,8 @@ function Create_Server_Profile_Template_SY480_Gen10_RHEL_Local_Boot
 
     $SHT               = Get-HPOVServerHardwareTypes -Name "SY 480 Gen10 2" -ErrorAction Stop
     $EnclGroup         = Get-HPOVEnclosureGroup -Name "EG-Synergy-Local" -ErrorAction Stop
-    $Eth1              = Get-HPOVNetwork -Name "Prod_1101" | New-HPOVServerProfileConnection -ConnectionID 1 -Name 'Prod-1101' -PortId "Mezz 3:1-c"
-    $Eth2              = Get-HPOVNetwork -Name "Prod_1102" | New-HPOVServerProfileConnection -ConnectionID 2 -Name 'Prod-1102' -PortId "Mezz 3:2-c"
+    $Eth1              = Get-HPOVNetworkSet -Name "Prod" | New-HPOVServerProfileConnection -ConnectionID 1 -Name 'Prod-NetworkSet-1' -PortId "Mezz 3:1-c"
+    $Eth2              = Get-HPOVNetworkSet -Name "Prod" | New-HPOVServerProfileConnection -ConnectionID 2 -Name 'Prod-NetworkSet-2' -PortId "Mezz 3:2-c"
     $LogicalDisk       = New-HPOVServerProfileLogicalDisk -Name "SAS RAID1" -RAID RAID1 -NumberofDrives 2 -Bootable $True
     $StorageController = New-HPOVServerProfileLogicalDiskController -ControllerID Embedded -Mode RAID -Initialize -LogicalDisk $LogicalDisk
 
@@ -511,8 +512,8 @@ function Create_Server_Profile_Template_SY660_Gen9_Windows_SAN_Storage
 
     $SHT               = Get-HPOVServerHardwareTypes -Name "SY 660 Gen9 1" -ErrorAction Stop
     $EnclGroup         = Get-HPOVEnclosureGroup -Name "EG-Synergy-Local" -ErrorAction Stop
-    $Eth1              = Get-HPOVNetwork -Name "Prod_1101" | New-HPOVServerProfileConnection -ConnectionID 1 -Name 'Prod-1101' -PortId "Mezz 3:1-c"
-    $Eth2              = Get-HPOVNetwork -Name "Prod_1102" | New-HPOVServerProfileConnection -ConnectionID 2 -Name 'Prod-1102' -PortId "Mezz 3:2-c"
+    $Eth1              = Get-HPOVNetworkSet -Name "Prod" | New-HPOVServerProfileConnection -ConnectionID 1 -Name 'Prod-NetworkSet-1' -PortId "Mezz 3:1-c"
+    $Eth2              = Get-HPOVNetworkSet -Name "Prod" | New-HPOVServerProfileConnection -ConnectionID 2 -Name 'Prod-NetworkSet-2' -PortId "Mezz 3:2-c"
     $FC1               = Get-HPOVNetwork -Name 'SAN A FC' | New-HPOVServerProfileConnection -connectionId 3
     $FC2               = Get-HPOVNetwork -Name 'SAN B FC' | New-HPOVServerProfileConnection -connectionId 4
     $LogicalDisk       = New-HPOVServerProfileLogicalDisk -Name "SAS RAID5 SSD" -RAID RAID5 -NumberofDrives 3 -DriveType SASSSD -Bootable $True
@@ -571,12 +572,13 @@ function Create_Server_Profile_Template_SY660_Gen10_Windows_SAN_Storage
 
     $SHT               = Get-HPOVServerHardwareTypes -Name "SY 660 Gen10 1" -ErrorAction Stop
     $EnclGroup         = Get-HPOVEnclosureGroup -Name "EG-Synergy-Local" -ErrorAction Stop
-    $Eth1              = Get-HPOVNetwork -Name "Prod_1101" | New-HPOVServerProfileConnection -ConnectionID 1 -Name 'Prod-1101' -PortId "Mezz 3:1-c"
-    $Eth2              = Get-HPOVNetwork -Name "Prod_1102" | New-HPOVServerProfileConnection -ConnectionID 2 -Name 'Prod-1102' -PortId "Mezz 3:2-c"
-    $FC1               = Get-HPOVNetwork -Name 'SAN A FCoE' | New-HPOVServerProfileConnection -connectionId 3
-    $FC2               = Get-HPOVNetwork -Name 'SAN B FCoE' | New-HPOVServerProfileConnection -connectionId 4
+    $Eth1              = Get-HPOVNetworkSet -Name "Prod" | New-HPOVServerProfileConnection -ConnectionID 1 -Name 'Prod-NetworkSet-1' -PortId "Mezz 3:1-c"
+    $Eth2              = Get-HPOVNetworkSet -Name "Prod" | New-HPOVServerProfileConnection -ConnectionID 2 -Name 'Prod-NetworkSet-2' -PortId "Mezz 3:2-c"
+    $FC1               = Get-HPOVNetwork -Name 'SAN A FCoE' | New-HPOVServerProfileConnection -ConnectionID 3
+    $FC2               = Get-HPOVNetwork -Name 'SAN B FCoE' | New-HPOVServerProfileConnection -ConnectionID 4
     $LogicalDisk       = New-HPOVServerProfileLogicalDisk -Name "SAS RAID5" -RAID RAID5 -NumberofDrives 3 -Bootable $True
-    $SANVol            = Get-HPOVStorageVolume -Name "Shared-Volume-2" | New-HPOVServerProfileAttachVolume -VolumeID 1
+    $StoragePool       = Get-HPOVStoragePool -Name FST_CPG1 -StorageSystem ThreePAR-1 -ErrorAction Stop
+    $SANVol            = New-HPOVServerProfileAttachVolume -Name SANVol-Gen10 -StoragePool $StoragePool -Capacity 100 -LunIdType Auto
     $StorageController = New-HPOVServerProfileLogicalDiskController -ControllerID Embedded -Mode RAID -Initialize -LogicalDisk $LogicalDisk
 
     $params = @{
@@ -631,8 +633,8 @@ function Create_Server_Profile_Template_SY480_Gen9_ESX_SAN_Boot
 
     $SHT               = Get-HPOVServerHardwareTypes -Name "SY 480 Gen9 2" -ErrorAction Stop
     $EnclGroup         = Get-HPOVEnclosureGroup -Name "EG-Synergy-Local" -ErrorAction Stop
-    $Eth1              = Get-HPOVNetwork -Name "Prod_1101" | New-HPOVServerProfileConnection -ConnectionID 1 -Name 'Prod-1101' -PortId "Mezz 3:1-c"
-    $Eth2              = Get-HPOVNetwork -Name "Prod_1102" | New-HPOVServerProfileConnection -ConnectionID 2 -Name 'Prod-1102' -PortId "Mezz 3:2-c"
+    $Eth1              = Get-HPOVNetworkSet -Name "Prod" | New-HPOVServerProfileConnection -ConnectionID 1 -Name 'Prod-NetworkSet-1' -PortId "Mezz 3:1-c"
+    $Eth2              = Get-HPOVNetworkSet -Name "Prod" | New-HPOVServerProfileConnection -ConnectionID 2 -Name 'Prod-NetworkSet-2' -PortId "Mezz 3:2-c"
     $FC1               = Get-HPOVNetwork -Name 'SAN A FC' | New-HPOVServerProfileConnection -ConnectionID 3 -Bootable -Priority Primary -BootVolumeSource ManagedVolume -ConnectionType FibreChannel
     $FC2               = Get-HPOVNetwork -Name 'SAN B FC' | New-HPOVServerProfileConnection -ConnectionID 4 -Bootable -Priority Secondary -BootVolumeSource ManagedVolume -ConnectionType FibreChannel
     $StoragePool       = Get-HPOVStoragePool -Name FST_CPG1 -StorageSystem ThreePAR-1 -ErrorAction Stop
@@ -690,8 +692,8 @@ function Create_Server_Profile_Template_SY480_Gen10_ESX_SAN_Boot
 
     $SHT               = Get-HPOVServerHardwareTypes -Name "SY 480 Gen10 1" -ErrorAction Stop
     $EnclGroup         = Get-HPOVEnclosureGroup -Name "EG-Synergy-Local" -ErrorAction Stop
-    $Eth1              = Get-HPOVNetwork -Name "Prod_1101" | New-HPOVServerProfileConnection -ConnectionID 1 -Name 'Prod-1101' -PortId "Mezz 3:1-c"
-    $Eth2              = Get-HPOVNetwork -Name "Prod_1102" | New-HPOVServerProfileConnection -ConnectionID 2 -Name 'Prod-1102' -PortId "Mezz 3:2-c"
+    $Eth1              = Get-HPOVNetworkSet -Name "Prod" | New-HPOVServerProfileConnection -ConnectionID 1 -Name 'Prod-NetworkSet-1' -PortId "Mezz 3:1-c"
+    $Eth2              = Get-HPOVNetworkSet -Name "Prod" | New-HPOVServerProfileConnection -ConnectionID 2 -Name 'Prod-NetworkSet-2' -PortId "Mezz 3:2-c"
     $FC1               = Get-HPOVNetwork -Name 'SAN A FCoE' | New-HPOVServerProfileConnection -ConnectionID 3 -Bootable -Priority Primary -BootVolumeSource ManagedVolume -ConnectionType FibreChannel
     $FC2               = Get-HPOVNetwork -Name 'SAN B FCoE' | New-HPOVServerProfileConnection -ConnectionID 4 -Bootable -Priority Secondary -BootVolumeSource ManagedVolume -ConnectionType FibreChannel
     $StoragePool       = Get-HPOVStoragePool -Name FST_CPG1 -StorageSystem ThreePAR-1 -ErrorAction Stop
@@ -831,10 +833,11 @@ Remove-Module -ErrorAction SilentlyContinue HPOneView.310
 Remove-Module -ErrorAction SilentlyContinue HPOneView.400
 Remove-Module -ErrorAction SilentlyContinue HPOneView.410
 Remove-Module -ErrorAction SilentlyContinue HPOneView.420
+Remove-Module -ErrorAction SilentlyContinue HPOneView.500
 
-if (-not (Get-Module HPOneview.500))
+if (-not (Get-Module HPOneview.520))
 {
-    Import-Module -Name HPOneView.500
+    Import-Module -Name HPOneView.520
 }
 
 if (-not $ConnectedSessions)
@@ -923,20 +926,19 @@ if ($schematic -eq "Potash") {
     Create_Server_Profile_Template_SY480_Gen9_RHEL_Local_Boot
     Create_Server_Profile_Template_SY660_Gen9_Windows_SAN_Storage
     Create_Server_Profile_Template_SY480_Gen9_ESX_SAN_Boot
-} elseif ($schematic -eq "Nitro") {
-    Create_Server_Profile_Template_SY480_Gen10_RHEL_Local_Boot
-    Create_Server_Profile_Template_SY660_Gen10_Windows_SAN_Storage
-}
-Create_Server_Profile_Template_SY480_Gen10_ESX_SAN_Boot
-if ($schematic -eq "Potash") {
+    Create_Server_Profile_Template_SY480_Gen10_ESX_SAN_Boot
     Create_Server_Profile_SY480_Gen9_RHEL_Local_Boot
     Create_Server_Profile_SY660_Gen9_Windows_SAN_Storage
     Create_Server_Profile_SY480_Gen9_ESX_SAN_Boot
+    Create_Server_Profile_SY480_Gen10_ESX_SAN_Boot
 } elseif ($schematic -eq "Nitro") {
+    Create_Server_Profile_Template_SY480_Gen10_RHEL_Local_Boot
+    Create_Server_Profile_Template_SY660_Gen10_Windows_SAN_Storage
+    Create_Server_Profile_Template_SY480_Gen10_ESX_SAN_Boot
     Create_Server_Profile_SY480_Gen10_RHEL_Local_Boot
     Create_Server_Profile_SY660_Gen10_Windows_SAN_Storage
+    Create_Server_Profile_SY480_Gen10_ESX_SAN_Boot
 }
-Create_Server_Profile_SY480_Gen10_ESX_SAN_Boot
 
 if ($schematic -eq "Potash") {
     #
@@ -947,3 +949,5 @@ if ($schematic -eq "Potash") {
     Create_Logical_Enclosure_Remote
 }
 Write-Output "HPE Synergy Appliance Configuration Complete" | Timestamp
+
+Disconnect-HPOVMgmt

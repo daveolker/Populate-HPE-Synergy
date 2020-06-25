@@ -3,12 +3,12 @@
 #
 # - Example script for de-configuring the HPE Synergy Appliance
 #
-#   VERSION 4.20
+#   VERSION 5.20
 #
 #   AUTHORS
-#   Dave Olker - HPE Software-Defined Cloud Group
+#   Dave Olker - HPE Storage and Big Data
 #
-# (C) Copyright 2019 Hewlett Packard Enterprise Development LP 
+# (C) Copyright 2020 Hewlett Packard Enterprise Development LP 
 ##############################################################################
 <#
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -29,6 +29,13 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 #>
+
+# ------------------ Parameters
+Param ( [String]$OVApplianceIP                  = "192.168.62.128",
+        [String]$OVAdminName                    = "Administrator",
+        [String]$OVAuthDomain                   = "Local",
+        [String]$OneViewModule                  = "HPOneView.520"
+)
 
 
 function Remove_Logical_Enclosures
@@ -219,24 +226,51 @@ function Remove_Scopes
 #
 ##############################################################################
 
-if (-not (get-module HPOneview.420)) 
+#
+# Unload any earlier versions of the HPOneView POSH modules
+#
+Remove-Module -ErrorAction SilentlyContinue HPOneView.120
+Remove-Module -ErrorAction SilentlyContinue HPOneView.200
+Remove-Module -ErrorAction SilentlyContinue HPOneView.300
+Remove-Module -ErrorAction SilentlyContinue HPOneView.310
+Remove-Module -ErrorAction SilentlyContinue HPOneView.400
+Remove-Module -ErrorAction SilentlyContinue HPOneView.410
+Remove-Module -ErrorAction SilentlyContinue HPOneView.420
+Remove-Module -ErrorAction SilentlyContinue HPOneView.500
+
+if (-not (Get-Module HPOneview.520))
 {
-    Import-Module HPOneView.420
+    Import-Module -Name HPOneView.520
 }
 
-if (-not $ConnectedSessions) 
+if (-not $ConnectedSessions)
 {
-	$Appliance = Read-Host 'ApplianceName'
-	$Username  = Read-Host 'Username'
-	$Password  = Read-Host 'Password' -AsSecureString
+    $ApplianceIP     = Read-Host -Prompt "Synergy Composer IP Address [$OVApplianceIP]"
+    if ([string]::IsNullOrWhiteSpace($ApplianceIP))
+    {
+        $ApplianceIP = $OVApplianceIP
+    }
 
-    Connect-HPOVMgmt -Hostname $Appliance -Username $Username -Password $Password
-    
+    $AdminName       = Read-Host -Prompt "Administrator Username [$OVAdminName]"
+    if ([string]::IsNullOrWhiteSpace($AdminName))
+    {
+        $AdminName   = $OVAdminName
+    }
+
+    $AdminCred       = Get-Credential -UserName $AdminName -Message "Password required for the user '$AdminName'"
+    if ([string]::IsNullOrWhiteSpace($AdminCred))
+    {
+        Write-Output "Blank Credential is not permitted.  Exiting."
+        Exit
+    }
+
+    Connect-HPOVMgmt -Hostname $ApplianceIP -Credential $AdminCred -AuthLoginDomain $OVAuthDomain -ErrorAction Stop
+
     if (-not $ConnectedSessions)
     {
-        Write-Output "Login to Synergy Appliance failed.  Exiting."
+        Write-Output "Login to Synergy System failed.  Exiting."
         Exit
-    } 
+    }
 }
 
 filter Timestamp {"$(Get-Date -Format G): $_"}
@@ -255,8 +289,8 @@ Remove_Storage_Pools
 Remove_Storage_Systems
 
 #
-#    Disabled the removal of OS Deployment Server since 
-#    it causes the Deployment appliances to stop working
+#    Disabled the removal of OS Deployment Server since
+#    it causes the OS Deployment appliance to stop working
 #
 #Remove_OS_Deployment_Servers
 
@@ -271,3 +305,5 @@ Remove_Scopes
 Remove_Firmware_Bundles
 
 Write-Output "HPE Synergy Appliance De-configuration Complete" | Timestamp
+
+Disconnect-HPOVMgmt
