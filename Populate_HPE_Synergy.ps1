@@ -56,9 +56,11 @@ function GetSchematic($ApplianceIP)
         }
         if ($response.Content -match '<Schematic_location>(?<schematic>.+)</Schematic_location>') {
             if ($Matches.schematic -eq "/dcs/schematic/synergy_2encl_c2nitro") {
-                return "Nitro"
+                return "100Gb"
+            } elseif ($Matches.schematic -eq "/dcs/schematic/synergy_2encl_gen10demo") {
+                return "100Gb"
             } elseif ($Matches.schematic -eq "/dcs/schematic/synergy_3encl_demo") {
-                return "Potash"
+                return "40Gb"
             } else {
                 throw "DCS Schematic " + $Matches.schematic + " is not supported by this script"
             }
@@ -105,7 +107,7 @@ function Configure_SAN_Managers
 
 function Configure_Networks($schematic)
 {
-    if ($schematic -eq "Potash") {
+    if ($schematic -eq "40Gb") {
         Write-Host "$(Get-TimeStamp) Adding IPv4 Subnets"
         New-HPOVAddressPoolSubnet -Domain "mgmt.lan" -Gateway $prod_gateway -NetworkId $prod_subnet -SubnetMask $prod_mask
         New-HPOVAddressPoolSubnet -Domain "deployment.lan" -Gateway $deploy_gateway -NetworkId $deploy_subnet -SubnetMask $deploy_mask
@@ -127,17 +129,17 @@ function Configure_Networks($schematic)
     New-HPOVNetwork -Name SVCluster-2 -MaximumBandwidth 20000 -Purpose ISCSI -Type Ethernet -TypicalBandwidth 2500 -VlanId 302 -VLANType Tagged
     New-HPOVNetwork -Name SVCluster-3 -MaximumBandwidth 20000 -Purpose ISCSI -Type Ethernet -TypicalBandwidth 2500 -VlanId 303 -VLANType Tagged
 
-    if ($schematic -eq "Potash") {
+    if ($schematic -eq "40Gb") {
         $Deploy_AddrPool = Get-HPOVAddressPoolSubnet -NetworkId $deploy_subnet
         Get-HPOVNetwork -Name Deployment | Set-HPOVNetwork -IPv4Subnet $Deploy_AddrPool
         $Prod_AddrPool = Get-HPOVAddressPoolSubnet -NetworkId $prod_subnet
         Get-HPOVNetwork -Name Mgmt | Set-HPOVNetwork -IPv4Subnet $Prod_AddrPool
     }
 
-    if ($schematic -eq "Potash") {
+    if ($schematic -eq "40Gb") {
         New-HPOVNetwork -Name "SAN A FC" -Type "Fibre Channel" -FabricType FabricAttach -LinkStabilityTime 30 -ManagedSan VSAN20 -MaximumBandwidth 20000 -TypicalBandwidth 8000
         New-HPOVNetwork -Name "SAN B FC" -Type "Fibre Channel" -FabricType FabricAttach -LinkStabilityTime 30 -ManagedSan VSAN21 -MaximumBandwidth 20000 -TypicalBandwidth 8000
-    } elseif ($schematic -eq "Nitro") {
+    } elseif ($schematic -eq "100Gb") {
         New-HPOVNetwork -Name "SAN A FC" -Type "Fibre Channel" -FabricType FabricAttach -LinkStabilityTime 30 -ManagedSan 29:00:7a:2b:21:e0:00:5a 
         New-HPOVNetwork -Name "SAN B FC" -Type "Fibre Channel" -FabricType FabricAttach -LinkStabilityTime 30 -ManagedSan 29:00:7a:2b:21:e0:00:86 
     }
@@ -179,7 +181,7 @@ function Add_Storage($schematic)
     Add-HPOVStorageSystem -Hostname 172.18.30.1 -Family StoreVirtual -Password dcs -Username dcs -VIPS @{ "172.18.30.1" = $SVNet1 } | Wait-HPOVTaskComplete
     $SVNet2 = Get-HPOVNetwork -Name SVCluster-2 -ErrorAction Stop
     Add-HPOVStorageSystem -Hostname 172.18.30.2 -Family StoreVirtual -Password dcs -Username dcs -VIPS @{ "172.18.30.2" = $SVNet2 } | Wait-HPOVTaskComplete
-    if ($schematic -eq 'Potash') {
+    if ($schematic -eq '40Gb') {
         $SVNet3 = Get-HPOVNetwork -Name SVCluster-3 -ErrorAction Stop
         Add-HPOVStorageSystem -Hostname 172.18.30.3 -Family StoreVirtual -Password dcs -Username dcs -VIPS @{ "172.18.30.3" = $SVNet3 } | Wait-HPOVTaskComplete
     }
@@ -187,7 +189,7 @@ function Add_Storage($schematic)
     Write-Host "$(Get-TimeStamp) Adding StoreVirtual Storage Volume Templates"
     Get-HPOVStoragePool Cluster-1 -StorageSystem Cluster-1 | New-HPOVStorageVolumeTemplate -Capacity 100 -Name SVT-StoreVirt-1 -ProvisionType Thin -Shared
     Get-HPOVStoragePool Cluster-2 -StorageSystem Cluster-2 | New-HPOVStorageVolumeTemplate -Capacity 100 -Name SVT-StoreVirt-2 -ProvisionType Thin -Shared
-    if ($schematic -eq 'Potash') {
+    if ($schematic -eq '40Gb') {
         Get-HPOVStoragePool Cluster-3 -StorageSystem Cluster-3 | New-HPOVStorageVolumeTemplate -Capacity 100 -Name SVT-StoreVirt-3 -ProvisionType Thin -Shared
     }
     Write-Host "$(Get-TimeStamp) Storage Configuration Complete"
@@ -210,7 +212,7 @@ function Rename_Enclosures
     Write-Host "$(Get-TimeStamp) All Enclosures Renamed"
 }
 
-function Rename_Enclosures_Nitro
+function Rename_Enclosures_2encl
 {
     Write-Host "$(Get-TimeStamp) Renaming Enclosures"
     $Enc = Get-HPOVEnclosure -Name 0000A66101 -ErrorAction SilentlyContinue
@@ -225,17 +227,17 @@ function Create_Uplink_Sets($schematic)
     Write-Host "$(Get-TimeStamp) Adding Fibre Channel and FCoE Uplink Sets"
     $LIGFlex = Get-HPOVLogicalInterconnectGroup -Name "LIG-VCEth"
     $SAN_A_FC = Get-HPOVNetwork -Name "SAN A FC"
-    if ($schematic -eq "Potash") {
+    if ($schematic -eq "40Gb") {
         New-HPOVUplinkSet -Resource $LIGFlex -Name "US-SAN-A-FC" -Type FibreChannel -FCUplinkSpeed 8 -Networks $SAN_A_FC -UplinkPorts "Enclosure1:Bay3:Q2.1" | Wait-HPOVTaskComplete
-    } elseif ($schematic -eq "Nitro") {
+    } elseif ($schematic -eq "100Gb") {
         New-HPOVUplinkSet -Resource $LIGFlex -Name "US-SAN-A-FC" -Type FibreChannel -FCUplinkSpeed 32 -Networks $SAN_A_FC -UplinkPorts "Enclosure1:Bay3:Q2.1" | Wait-HPOVTaskComplete
     }
 
     $LIGFlex = Get-HPOVLogicalInterconnectGroup -Name "LIG-VCEth"
     $SAN_B_FC = Get-HPOVNetwork -Name "SAN B FC"
-    if ($schematic -eq "Potash") {
+    if ($schematic -eq "40Gb") {
         New-HPOVUplinkSet -Resource $LIGFlex -Name "US-SAN-B-FC" -Type FibreChannel -FCUplinkSpeed 8 -Networks $SAN_B_FC -UplinkPorts "Enclosure2:Bay6:Q2.1" | Wait-HPOVTaskComplete
-    } elseif ($schematic -eq "Nitro") {
+    } elseif ($schematic -eq "100Gb") {
         New-HPOVUplinkSet -Resource $LIGFlex -Name "US-SAN-B-FC" -Type FibreChannel -FCUplinkSpeed 32 -Networks $SAN_B_FC -UplinkPorts "Enclosure2:Bay6:Q2.1" | Wait-HPOVTaskComplete        
     }
     $LIGFlex = Get-HPOVLogicalInterconnectGroup -Name "LIG-VCEth"
@@ -259,7 +261,7 @@ function Create_Uplink_Sets($schematic)
     $Prod_Nets = Get-HPOVNetwork -Name "Prod*"
     New-HPOVUplinkSet -Resource $LIGFlex -Name "US-Prod" -Type Ethernet -Networks $Prod_Nets -UplinkPorts "Enclosure1:Bay3:Q1.4","Enclosure2:Bay6:Q1.4" | Wait-HPOVTaskComplete
 
-    if ($schematic -eq "Potash") {
+    if ($schematic -eq "40Gb") {
         Write-Host "$(Get-TimeStamp) Adding ImageStreamer Uplink Sets"
         $ImageStreamerDeploymentNetworkObject = Get-HPOVNetwork -Name "Deployment" -ErrorAction Stop
         Get-HPOVLogicalInterconnectGroup -Name "LIG-VCEth" -ErrorAction Stop | New-HPOVUplinkSet -Name "US-Image Streamer" -Type ImageStreamer -Networks $ImageStreamerDeploymentNetworkObject -UplinkPorts "Enclosure1:Bay3:Q5.1","Enclosure1:Bay3:Q6.1","Enclosure2:Bay6:Q5.1","Enclosure2:Bay6:Q6.1" | Wait-HPOVTaskComplete
@@ -271,12 +273,12 @@ function Create_Uplink_Sets($schematic)
 function Create_Enclosure_Group($schematic)
 {
     Write-Host "$(Get-TimeStamp) Creating Local Enclosure Group"
-    if ($schematic -eq "Potash") {
+    if ($schematic -eq "40Gb") {
         $3FrameVCLIG = Get-HPOVLogicalInterconnectGroup -Name LIG-VCEth
         $SasLIG = Get-HPOVLogicalInterconnectGroup -Name LIG-SAS
         $FcLIG = Get-HPOVLogicalInterconnectGroup -Name LIG-FC
         New-HPOVEnclosureGroup -name "EG-Synergy-Local" -LogicalInterconnectGroupMapping @{Frame1 = $3FrameVCLIG,$SasLIG,$FcLIG; Frame2 = $3FrameVCLIG,$SasLIG,$FcLIG; Frame3 = $3FrameVCLIG,$SasLIG,$FcLIG} -EnclosureCount 3 -IPv4AddressType External -DeploymentNetworkType Internal
-    } elseif ($schematic -eq "Nitro") {
+    } elseif ($schematic -eq "100Gb") {
         $2FrameVCLIG = Get-HPOVLogicalInterconnectGroup -Name LIG-VCEth
         $SasLIG = Get-HPOVLogicalInterconnectGroup -Name LIG-SAS
         $FC16LIG = Get-HPOVLogicalInterconnectGroup -Name LIG-FC16
@@ -322,11 +324,11 @@ function Create_Logical_Enclosure_Remote
 function Create_Logical_Interconnect_Groups($schematic)
 {
     Write-Host "$(Get-TimeStamp) Creating Local Logical Interconnect Groups"
-    if ($schematic -eq "Potash") {
+    if ($schematic -eq "40Gb") {
         New-HPOVLogicalInterconnectGroup -Name "LIG-SAS" -FrameCount 1 -InterconnectBaySet 1 -FabricModuleType "SAS" -Bays @{Frame1 = @{Bay1 = "SE12SAS" ; Bay4 = "SE12SAS"}}
         New-HPOVLogicalInterconnectGroup -Name "LIG-FC" -FrameCount 1 -InterconnectBaySet 2 -FabricModuleType "SEVCFC" -Bays @{Frame1 = @{Bay2 = "SEVC16GbFC" ; Bay5 = "SEVC16GbFC"}}
         New-HPOVLogicalInterconnectGroup -Name "LIG-VCEth" -FrameCount 3 -InterconnectBaySet 3 -FabricModuleType "SEVC40F8" -Bays @{Frame1 = @{Bay3 = "SEVC40f8" ; Bay6 = "SE20ILM"};Frame2 = @{Bay3 = "SE20ILM"; Bay6 = "SEVC40f8" };Frame3 = @{Bay3 = "SE20ILM"; Bay6 = "SE20ILM"}} -FabricRedundancy "HighlyAvailable"
-    } elseif ($schematic -eq "Nitro") {
+    } elseif ($schematic -eq "100Gb") {
         New-HPOVLogicalInterconnectGroup -Name "LIG-SAS" -FrameCount 1 -InterconnectBaySet 1 -FabricModuleType "SAS" -Bays @{Frame1 = @{Bay1 = "SE12SAS" ; Bay4 = "SE12SAS"}}
         New-HPOVLogicalInterconnectGroup -Name "LIG-FC16" -FrameCount 1 -InterconnectBaySet 1 -FabricModuleType "SEVCFC" -Bays @{Frame1 = @{Bay1 = "SEVC16GbFC" ; Bay4 = "SEVC16GbFC"}}
         New-HPOVLogicalInterconnectGroup -Name "LIG-FC32" -FrameCount 1 -InterconnectBaySet 2 -FabricModuleType "SEVCFC" -Bays @{Frame1 = @{Bay2 = "SEVC32GbFC" ; Bay5 = "SEVC32GbFC"}}
@@ -856,7 +858,7 @@ catch {
 
 Write-Host "$(Get-TimeStamp) Configuring HPE Synergy Appliance"
 
-if ($schematic -eq "Potash") {
+if ($schematic -eq "40Gb") {
     ##########################################################################
     #
     # Process variables in the Populate_HPE_Synergy-Params.txt file.
@@ -878,18 +880,18 @@ if ($schematic -eq "Potash") {
 Add_Firmware_Bundle
 Add_Licenses
 Configure_Address_Pools
-if ($schematic -eq "Potash") {
+if ($schematic -eq "40Gb") {
     Add_Remote_Enclosures
     Rename_Enclosures
 } else {
-    Rename_Enclosures_Nitro
+    Rename_Enclosures_2encl
 }
 PowerOff_All_Servers
 Configure_SAN_Managers
 Configure_Networks($schematic)
 Add_Storage($schematic)
 Add_Users
-if ($schematic -eq "Potash") {
+if ($schematic -eq "40Gb") {
     Create_OS_Deployment_Server
 }
 Create_Logical_Interconnect_Groups($schematic)
@@ -897,7 +899,7 @@ Create_Uplink_Sets($schematic)
 Create_Enclosure_Group($schematic)
 Create_Logical_Enclosure
 Add_Scopes
-if ($schematic -eq "Potash") {
+if ($schematic -eq "40Gb") {
     Create_Server_Profile_Template_SY480_Gen9_RHEL_Local_Boot
     Create_Server_Profile_Template_SY660_Gen9_Windows_SAN_Storage
     Create_Server_Profile_Template_SY480_Gen9_ESX_SAN_Boot
@@ -906,7 +908,7 @@ if ($schematic -eq "Potash") {
     Create_Server_Profile_SY660_Gen9_Windows_SAN_Storage
     Create_Server_Profile_SY480_Gen9_ESX_SAN_Boot
     Create_Server_Profile_SY480_Gen10_ESX_SAN_Boot
-} elseif ($schematic -eq "Nitro") {
+} elseif ($schematic -eq "100Gb") {
     Create_Server_Profile_Template_SY480_Gen10_RHEL_Local_Boot
     Create_Server_Profile_Template_SY660_Gen10_Windows_SAN_Storage
     Create_Server_Profile_Template_SY480_Gen10_ESX_SAN_Boot
@@ -915,7 +917,7 @@ if ($schematic -eq "Potash") {
     Create_Server_Profile_SY480_Gen10_ESX_SAN_Boot
 }
 
-if ($schematic -eq "Potash") {
+if ($schematic -eq "40Gb") {
     #
     # Add Second Enclosure Group for Remote Enclosures
     #
