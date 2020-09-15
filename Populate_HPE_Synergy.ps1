@@ -845,6 +845,8 @@ if (-not $ConnectedSessions)
         Write-Host "$(Get-TimeStamp) Login to Synergy System failed.  Exiting."
         Exit
     }
+} else { 
+    $ApplianceIP = $ConnectedSessions[0] | Select-Object -ExpandProperty name
 }
 
 try {
