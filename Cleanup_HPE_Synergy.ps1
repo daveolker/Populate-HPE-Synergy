@@ -312,4 +312,4 @@ Remove_Firmware_Bundles
 
 Write-Host "$(Get-TimeStamp) HPE Synergy Appliance De-configuration Complete"
 
-#Disconnect-OVMgmt
+Disconnect-OVMgmt
