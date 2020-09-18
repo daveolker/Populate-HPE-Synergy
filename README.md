@@ -21,7 +21,7 @@ For this reason we are maintaining two "active" versions of this toolkit - one t
 
 The change in naming convention was introduced in version 5.3 of the POSH-HPEOneView library, which was released to coincide with the release of version 5.3 of HPE OneView and version 5.3 of the HPE Synergy DCS tool.  
 
-The below table lists the recommended combination of DCS versions, HPE OneView PowerShell library versions, and Populate_HPE_Synergy versions supported at this time:
+The below table lists the recommended combination of DCS versions, HPE OneView PowerShell library versions, and Populate-HPE-Synergy versions supported at this time:
 
 | HPE OneView DCS Appliance Version | HPE OneView PowerShell Library Version | Populate-HPE-Synergy Tool Version |
 |-----------------------------------|----------------------------------------|-----------------------------------|
