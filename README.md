@@ -15,7 +15,7 @@ This package contains two primary scripts and one configuration file. These are 
 The script requires PowerShell Core version 6 or later. It will *NOT* work with Windows PowerShell 5.1, because it uses the PowerShell function Invoke-WebRequest with the option -SkipCertificateCheck and that option was only added in PowerShell 6.0. This option is used because DCS appliances typically use self-signed certificates and without the option the certificate check would fail and throw an error.
 
 # What's New
-The HPE OneView PowerShell library (POSH-HPEOneView) recently introduced a change to the naming convention used by the OneView commands used by the Populate_HPE_Synergy.ps1 and Cleanup_HPE_Synergy.ps1 scripts. The latest version of this Populate HPE Synergy toolkit (version 5.4) is designed to use the new naming convention, which means it will only work with versions of the POSH-HPEOneView library that use the new naming convention.
+The HPE OneView PowerShell library (POSH-HPEOneView) recently introduced a change to the naming convention of the OneView commands used by the Populate_HPE_Synergy.ps1 and Cleanup_HPE_Synergy.ps1 scripts. The latest version of this Populate HPE Synergy toolkit (version 5.4) is designed to use the new naming convention, which means it will only work with versions of the POSH-HPEOneView library that use the new naming convention.
 
 For this reason we are maintaining two "active" versions of this toolkit - one that supports the previous naming convention, and one that supports the new naming convention.  Eventually support for the older naming convention will be deprecated.
 
