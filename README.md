@@ -30,7 +30,7 @@ The below table lists the recommended combination of DCS versions, HPE OneView P
 | HPE_ONEVIEW_DCS_5.40A_SYNERGY.*   | Release 5.40.*                         | 5.4 (Select the 5.4 branch)       |
 
 ## Populate_HPE_Synergy.ps1
-This script connects with the Synergy DCS appliance and discovers/configures all the simulated hardware.  When the script is run, it prompts for the hostname or IP address of the Synergy appliance, the Administrator user name (usually Administrator), and the Administrator password. Then it first detects the DCS schematic running on the appliance. It supports 2 schematics: synergy_3encl_demo and synergy_2encl_c2nitro. Any other schematic is unsupported and will make the script fail.
+This script connects with the Synergy DCS appliance and discovers/configures all the simulated hardware.  When the script is run, it prompts for the hostname or IP address of the Synergy appliance, the Administrator user name (usually Administrator), and the Administrator password. Then it first detects the DCS schematic running on the appliance. It supports 3 schematics: synergy_3encl_demo, synergy_2encl_c2nitro, and synergy_2encl_gen10demo. Any other schematic is unsupported and will make the script fail.
 
 This script does the following:
 
