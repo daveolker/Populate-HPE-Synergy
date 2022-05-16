@@ -1,10 +1,6 @@
 # Populate HPE Synergy
 Configure and populate an HPE Synergy Data Center Simulator virtual appliance for demonstration, educational, and custom integration purposes.
 
-#
-## The HPE Synergy Data Center Simulator is an HPE proprietary tool available for HPE employee and Partner use only. 
-#
-
 The HPE Synergy Data Center Simulator (DCS) is a useful tool for learning about the HPE Synergy Composable Infrastructure platform and the HPE OneView management interface. The tool simulates a datacenter comprised of multiple racks of HPE Synergy hardware, 3PAR storage arrays, SAN managers, and other simulated infrastructure. The simulator looks and acts just like a real, physical Synergy environment. It uses the same RESTful interface as real Synergy and OneView instances, making it the perfect environment for learning how to implement and demonstrate Infrastructure-as-Code.
 
 The Populate HPE Synergy scripts work with the Data Center Simulator to instantiate all of the simulated hardware and components available in the appliance, making it a much more feature-rich environment to demonstrate and learn how to use features such as Server Profile Templates, Server Profiles, etc.
@@ -15,11 +11,11 @@ This package contains two primary scripts and one configuration file. These are 
 The script requires PowerShell Core version 6 or later. It will *NOT* work with Windows PowerShell 5.1, because it uses the PowerShell function Invoke-WebRequest with the option -SkipCertificateCheck and that option was only added in PowerShell 6.0. This option is used because DCS appliances typically use self-signed certificates and without the option the certificate check would fail and throw an error.
 
 # What's New
-The HPE OneView PowerShell library (POSH-HPEOneView) recently introduced a change to the naming convention of the OneView commands used by the Populate_HPE_Synergy.ps1 and Cleanup_HPE_Synergy.ps1 scripts. The latest version of this Populate HPE Synergy toolkit (version 5.4) is designed to use the new naming convention, which means it will only work with versions of the POSH-HPEOneView library that use the new naming convention.
+The HPE OneView PowerShell library (POSH-HPEOneView) version 5.30 introduced a change to the naming convention of the OneView commands used by the Populate_HPE_Synergy.ps1 and Cleanup_HPE_Synergy.ps1 scripts. The latest version of this Populate HPE Synergy toolkit is designed to use the new naming convention, which means it will only work with versions of the POSH-HPEOneView library that use the new naming convention.
 
-For this reason we are maintaining two "active" versions of this toolkit - one that supports the previous naming convention, and one that supports the new naming convention.  Eventually support for the older naming convention will be deprecated.
+For this reason we are maintaining several "active" versions of this toolkit - one that supports the previous naming convention, and one that supports the new naming convention.  Eventually support for the older naming convention will be deprecated.
 
-The change in naming convention was introduced in version 5.3 of the POSH-HPEOneView library, which was released to coincide with the release of version 5.3 of HPE OneView and version 5.3 of the HPE Synergy DCS tool.  
+In addition, HPE OneView 7.0 dropped support for some older hardware, specifically for the Synergy DCS StoreVirtual storage systems, so this script no longer configures them. Be careful about the branch you're getting this script from and make sure it applies to your situation.
 
 The below table lists the recommended combination of DCS versions, HPE OneView PowerShell library versions, and Populate-HPE-Synergy versions supported at this time:
 
@@ -28,6 +24,7 @@ The below table lists the recommended combination of DCS versions, HPE OneView P
 | HPE_ONEVIEW_DCS_5.20_SYNERGY.*    | Release 5.20.*                         | 5.2 (Select the 5.2 branch)       |
 | HPE_ONEVIEW_DCS_5.30_SYNERGY.*    | Release 5.30.*                         | 5.4 (Select the 5.4 branch)       |
 | HPE_ONEVIEW_DCS_5.40A_SYNERGY.*   | Release 5.40.*                         | 5.4 (Select the 5.4 branch)       |
+| HPE_ONEVIEW_DCS_7.0_SYNERGY.*     | Release 6.30.*                         | 7.0 (Select the 7.0 branch)       |
 
 ## Populate_HPE_Synergy.ps1
 This script connects with the Synergy DCS appliance and discovers/configures all the simulated hardware.  When the script is run, it prompts for the hostname or IP address of the Synergy appliance, the Administrator user name (usually Administrator), and the Administrator password. Then it first detects the DCS schematic running on the appliance. It supports 3 schematics: synergy_3encl_demo, synergy_2encl_c2nitro, and synergy_2encl_gen10demo. Any other schematic is unsupported and will make the script fail.
