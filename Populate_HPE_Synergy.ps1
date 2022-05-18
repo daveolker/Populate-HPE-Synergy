@@ -35,7 +35,7 @@ THE SOFTWARE.
 Param ( [String]$OVApplianceIP                  = "192.168.62.128",
         [String]$OVAdminName                    = "Administrator",
         [String]$OVAuthDomain                   = "Local",
-        [String]$OneViewModule                  = "HPEOneView.540"
+        [String]$OneViewModule                  = "HPEOneView.630"
 )
 
 
@@ -55,11 +55,9 @@ function GetSchematic($ApplianceIP)
             throw "DCS is not running"
         }
         if ($response.Content -match '<Schematic_location>(?<schematic>.+)</Schematic_location>') {
-            if ($Matches.schematic -eq "/dcs/schematic/synergy_2encl_c2nitro") {
+            if ($Matches.schematic -eq "/dcs/schematic/demo_synergy_2encl_gen10") {
                 return "100Gb"
-            } elseif ($Matches.schematic -eq "/dcs/schematic/synergy_2encl_gen10demo") {
-                return "100Gb"
-            } elseif ($Matches.schematic -eq "/dcs/schematic/synergy_3encl_demo") {
+            } elseif ($Matches.schematic -eq "/dcs/schematic/demo_synergy_3encl") {
                 return "40Gb"
             } else {
                 throw "DCS Schematic " + $Matches.schematic + " is not supported by this script"
@@ -125,9 +123,6 @@ function Configure_Networks($schematic)
     New-OVNetwork -Name Prod_1104 -MaximumBandwidth 20000 -Purpose General -Type Ethernet -TypicalBandwidth 2500 -VlanId 1104 -VLANType Tagged
     New-OVNetwork -Name Deployment -MaximumBandwidth 20000 -Purpose General -Type Ethernet -TypicalBandwidth 2500 -VlanId 1500 -VLANType Tagged
     New-OVNetwork -Name Mgmt -MaximumBandwidth 20000 -Purpose Management -Type Ethernet -TypicalBandwidth 2500 -VlanId 100 -VLANType Tagged
-    New-OVNetwork -Name SVCluster-1 -MaximumBandwidth 20000 -Purpose ISCSI -Type Ethernet -TypicalBandwidth 2500 -VlanId 301 -VLANType Tagged
-    New-OVNetwork -Name SVCluster-2 -MaximumBandwidth 20000 -Purpose ISCSI -Type Ethernet -TypicalBandwidth 2500 -VlanId 302 -VLANType Tagged
-    New-OVNetwork -Name SVCluster-3 -MaximumBandwidth 20000 -Purpose ISCSI -Type Ethernet -TypicalBandwidth 2500 -VlanId 303 -VLANType Tagged
 
     if ($schematic -eq "40Gb") {
         $Deploy_AddrPool = Get-OVAddressPoolSubnet -NetworkId $deploy_subnet
@@ -176,22 +171,6 @@ function Add_Storage($schematic)
     Get-OVStoragePool FST_CPG1 -StorageSystem ThreePAR-1 | New-OVStorageVolume -Capacity 200 -Name Shared-Volume-1 -Shared | Wait-OVTaskComplete
     Get-OVStoragePool FST_CPG1 -StorageSystem ThreePAR-1 | New-OVStorageVolume -Capacity 200 -Name Shared-Volume-2 -Shared | Wait-OVTaskComplete
 
-    Write-Host "$(Get-TimeStamp) Adding StoreVirtual Storage Systems"
-    $SVNet1 = Get-OVNetwork -Name SVCluster-1 -ErrorAction Stop
-    Add-OVStorageSystem -Hostname 172.18.30.1 -Family StoreVirtual -Password dcs -Username dcs -VIPS @{ "172.18.30.1" = $SVNet1 } | Wait-OVTaskComplete
-    $SVNet2 = Get-OVNetwork -Name SVCluster-2 -ErrorAction Stop
-    Add-OVStorageSystem -Hostname 172.18.30.2 -Family StoreVirtual -Password dcs -Username dcs -VIPS @{ "172.18.30.2" = $SVNet2 } | Wait-OVTaskComplete
-    if ($schematic -eq '40Gb') {
-        $SVNet3 = Get-OVNetwork -Name SVCluster-3 -ErrorAction Stop
-        Add-OVStorageSystem -Hostname 172.18.30.3 -Family StoreVirtual -Password dcs -Username dcs -VIPS @{ "172.18.30.3" = $SVNet3 } | Wait-OVTaskComplete
-    }
-
-    Write-Host "$(Get-TimeStamp) Adding StoreVirtual Storage Volume Templates"
-    Get-OVStoragePool Cluster-1 -StorageSystem Cluster-1 | New-OVStorageVolumeTemplate -Capacity 100 -Name SVT-StoreVirt-1 -ProvisionType Thin -Shared
-    Get-OVStoragePool Cluster-2 -StorageSystem Cluster-2 | New-OVStorageVolumeTemplate -Capacity 100 -Name SVT-StoreVirt-2 -ProvisionType Thin -Shared
-    if ($schematic -eq '40Gb') {
-        Get-OVStoragePool Cluster-3 -StorageSystem Cluster-3 | New-OVStorageVolumeTemplate -Capacity 100 -Name SVT-StoreVirt-3 -ProvisionType Thin -Shared
-    }
     Write-Host "$(Get-TimeStamp) Storage Configuration Complete"
 }
 
@@ -813,6 +792,11 @@ Remove-Module -ErrorAction SilentlyContinue HPOneView.420
 Remove-Module -ErrorAction SilentlyContinue HPOneView.500
 Remove-Module -ErrorAction SilentlyContinue HPOneView.520
 Remove-Module -ErrorAction SilentlyContinue HPEOneView.530
+Remove-Module -ErrorAction SilentlyContinue HPEOneView.540
+Remove-Module -ErrorAction SilentlyContinue HPEOneView.550
+Remove-Module -ErrorAction SilentlyContinue HPEOneView.600
+Remove-Module -ErrorAction SilentlyContinue HPEOneView.610
+Remove-Module -ErrorAction SilentlyContinue HPEOneView.620
 
 if (-not (Get-Module $OneViewModule))
 {
